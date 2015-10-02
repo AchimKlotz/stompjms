@@ -10,23 +10,31 @@
 
 package org.fusesource.stomp.jms;
 
-
-import org.fusesource.stomp.jms.jndi.JNDIStorable;
-import org.fusesource.stomp.jms.util.PropertyUtil;
-
-import javax.jms.*;
-import javax.net.ssl.SSLContext;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.ExceptionListener;
+import javax.jms.JMSException;
+import javax.jms.QueueConnection;
+import javax.jms.QueueConnectionFactory;
+import javax.jms.TopicConnection;
+import javax.jms.TopicConnectionFactory;
+import javax.net.ssl.SSLContext;
+
+import org.fusesource.stomp.client.ProtocolException;
+import org.fusesource.stomp.jms.jndi.JNDIStorable;
+import org.fusesource.stomp.jms.util.PropertyUtil;
+
 /**
  * Jms ConnectionFactory implementation
  */
-public class StompJmsConnectionFactory extends JNDIStorable implements ConnectionFactory, QueueConnectionFactory,
-        TopicConnectionFactory {
+public class StompJmsConnectionFactory extends JNDIStorable
+        implements ConnectionFactory, QueueConnectionFactory, TopicConnectionFactory {
     private URI brokerURI;
     private URI localURI;
     private String username;
@@ -46,7 +54,6 @@ public class StompJmsConnectionFactory extends JNDIStorable implements Connectio
      */
     public StompJmsConnectionFactory() {
     }
-
 
     /**
      * Set properties
@@ -86,7 +93,6 @@ public class StompJmsConnectionFactory extends JNDIStorable implements Connectio
             e.printStackTrace();
         }
 
-
     }
 
     /**
@@ -94,8 +100,9 @@ public class StompJmsConnectionFactory extends JNDIStorable implements Connectio
      * @throws JMSException
      * @see javax.jms.TopicConnectionFactory#createTopicConnection()
      */
+    @Override
     public TopicConnection createTopicConnection() throws JMSException {
-        return createTopicConnection( getUsername(), getPassword());
+        return createTopicConnection(getUsername(), getPassword());
     }
 
     /**
@@ -105,10 +112,12 @@ public class StompJmsConnectionFactory extends JNDIStorable implements Connectio
      * @throws JMSException
      * @see javax.jms.TopicConnectionFactory#createTopicConnection(java.lang.String, java.lang.String)
      */
+    @Override
     public TopicConnection createTopicConnection(String userName, String password) throws JMSException {
         try {
-            StompJmsTopicConnection result = new StompJmsTopicConnection(this.brokerURI, this.localURI, userName, password, sslContext);
-            PropertyUtil.setProperties(result, PropertyUtil.getProperties(this));
+            StompJmsTopicConnection result = new StompJmsTopicConnection(this.brokerURI, this.localURI, userName,
+                    password, sslContext);
+            postConstruct(result);
             return result;
         } catch (Exception e) {
             throw StompJmsExceptionSupport.create(e);
@@ -120,6 +129,7 @@ public class StompJmsConnectionFactory extends JNDIStorable implements Connectio
      * @throws JMSException
      * @see javax.jms.ConnectionFactory#createConnection()
      */
+    @Override
     public Connection createConnection() throws JMSException {
         return createConnection(getUsername(), getPassword());
     }
@@ -131,10 +141,12 @@ public class StompJmsConnectionFactory extends JNDIStorable implements Connectio
      * @throws JMSException
      * @see javax.jms.ConnectionFactory#createConnection(java.lang.String, java.lang.String)
      */
+    @Override
     public Connection createConnection(String userName, String password) throws JMSException {
         try {
-            StompJmsConnection result = new StompJmsConnection(this.brokerURI, this.localURI, userName, password, sslContext);
-            PropertyUtil.setProperties(result, PropertyUtil.getProperties(this));
+            StompJmsConnection result = new StompJmsConnection(this.brokerURI, this.localURI, userName, password,
+                    sslContext);
+            postConstruct(result);
             return result;
         } catch (Exception e) {
             throw StompJmsExceptionSupport.create(e);
@@ -146,6 +158,7 @@ public class StompJmsConnectionFactory extends JNDIStorable implements Connectio
      * @throws JMSException
      * @see javax.jms.QueueConnectionFactory#createQueueConnection()
      */
+    @Override
     public QueueConnection createQueueConnection() throws JMSException {
         return createQueueConnection(getUsername(), getPassword());
     }
@@ -157,16 +170,35 @@ public class StompJmsConnectionFactory extends JNDIStorable implements Connectio
      * @throws JMSException
      * @see javax.jms.QueueConnectionFactory#createQueueConnection(java.lang.String, java.lang.String)
      */
+    @Override
     public QueueConnection createQueueConnection(String userName, String password) throws JMSException {
         try {
-            StompJmsQueueConnection result = new StompJmsQueueConnection(this.brokerURI, this.localURI, userName, password, sslContext);
-            PropertyUtil.setProperties(result, PropertyUtil.getProperties(this));
+            StompJmsQueueConnection result = new StompJmsQueueConnection(this.brokerURI, this.localURI, userName,
+                    password, sslContext);
+            postConstruct(result);
             return result;
         } catch (Exception e) {
             throw StompJmsExceptionSupport.create(e);
         }
     }
 
+    private void postConstruct(final StompJmsConnection result) throws Exception {
+        PropertyUtil.setProperties(result, PropertyUtil.getProperties(this));
+        result.setExceptionListener(new ExceptionListener() {
+
+            @Override
+            public void onException(JMSException exception) {
+                try {
+                    if (exception.getCause() instanceof ProtocolException) {
+                        result.close();
+                    }
+                } catch (JMSException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
 
     /**
      * @return the brokerURI
@@ -175,17 +207,16 @@ public class StompJmsConnectionFactory extends JNDIStorable implements Connectio
         return this.brokerURI != null ? this.brokerURI.toString() : "";
     }
 
-
     /**
-     * @param brokerURI the brokerURI to set
+     * @param brokerURI
+     *            the brokerURI to set
      */
     public void setBrokerURI(String brokerURI) {
-        if( brokerURI == null ) {
+        if (brokerURI == null) {
             throw new IllegalArgumentException("brokerURI cannot be null");
         }
         this.brokerURI = createURI(brokerURI);
     }
-
 
     /**
      * @return the localURI
@@ -194,9 +225,9 @@ public class StompJmsConnectionFactory extends JNDIStorable implements Connectio
         return this.localURI != null ? this.localURI.toString() : "";
     }
 
-
     /**
-     * @param localURI the localURI to set
+     * @param localURI
+     *            the localURI to set
      */
     public void setLocalURI(String localURI) {
         this.localURI = createURI(localURI);
@@ -207,12 +238,12 @@ public class StompJmsConnectionFactory extends JNDIStorable implements Connectio
             try {
                 return new URI(name);
             } catch (URISyntaxException e) {
-                throw (IllegalArgumentException) new IllegalArgumentException("Invalid broker URI: " + name).initCause(e);
+                throw (IllegalArgumentException) new IllegalArgumentException("Invalid broker URI: " + name)
+                        .initCause(e);
             }
         }
         return null;
     }
-
 
     /**
      * @return the username
@@ -221,14 +252,13 @@ public class StompJmsConnectionFactory extends JNDIStorable implements Connectio
         return this.username;
     }
 
-
     /**
-     * @param username the username to set
+     * @param username
+     *            the username to set
      */
     public void setUsername(String username) {
         this.username = username;
     }
-
 
     /**
      * @return the password
@@ -237,9 +267,9 @@ public class StompJmsConnectionFactory extends JNDIStorable implements Connectio
         return this.password;
     }
 
-
     /**
-     * @param password the password to set
+     * @param password
+     *            the password to set
      */
     public void setPassword(String password) {
         this.password = password;
@@ -260,7 +290,7 @@ public class StompJmsConnectionFactory extends JNDIStorable implements Connectio
     public void setOmitHost(boolean omitHost) {
         this.omitHost = omitHost;
     }
-    
+
     public String getQueuePrefix() {
         return queuePrefix;
     }
