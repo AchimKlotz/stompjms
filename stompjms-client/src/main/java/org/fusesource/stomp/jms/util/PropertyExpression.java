@@ -10,16 +10,14 @@
 
 package org.fusesource.stomp.jms.util;
 
-import org.fusesource.stomp.jms.StompJmsDestination;
-import org.fusesource.stomp.jms.StompJmsExceptionSupport;
-import org.fusesource.stomp.jms.message.StompJmsMessage;
-
-import javax.jms.DeliveryMode;
-import javax.jms.InvalidDestinationException;
-import javax.jms.JMSException;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+
+import javax.jms.DeliveryMode;
+import javax.jms.JMSException;
+
+import org.fusesource.stomp.jms.StompJmsDestination;
+import org.fusesource.stomp.jms.message.StompJmsMessage;
 
 
 /**
@@ -38,6 +36,7 @@ public class PropertyExpression {
     static {
         JMS_PROPERTY_EXPRESSIONS.put("JMSDestination", new SubExpression() {
 
+            @Override
             public Object evaluate(StompJmsMessage message) {
                 try {
                     StompJmsDestination dest = message.getStompJmsDestination();
@@ -52,6 +51,7 @@ public class PropertyExpression {
         });
         JMS_PROPERTY_EXPRESSIONS.put("JMSReplyTo", new SubExpression() {
 
+            @Override
             public Object evaluate(StompJmsMessage message) {
                 try {
                     StompJmsDestination dest = message.getStompJmsReplyTo();
@@ -66,24 +66,28 @@ public class PropertyExpression {
         });
         JMS_PROPERTY_EXPRESSIONS.put("JMSType", new SubExpression() {
 
+            @Override
             public Object evaluate(StompJmsMessage message) {
                 return message.getJMSType();
             }
         });
         JMS_PROPERTY_EXPRESSIONS.put("JMSDeliveryMode", new SubExpression() {
 
+            @Override
             public Object evaluate(StompJmsMessage message) {
                 return Integer.valueOf(message.isPersistent() ? DeliveryMode.PERSISTENT : DeliveryMode.NON_PERSISTENT);
             }
         });
         JMS_PROPERTY_EXPRESSIONS.put("JMSPriority", new SubExpression() {
 
+            @Override
             public Object evaluate(StompJmsMessage message) {
                 return Integer.valueOf(message.getJMSPriority());
             }
         });
         JMS_PROPERTY_EXPRESSIONS.put("JMSStompJmsMessageID", new SubExpression() {
 
+            @Override
             public Object evaluate(StompJmsMessage message) {
                 if (message.getJMSMessageID() == null) {
                     return null;
@@ -93,30 +97,35 @@ public class PropertyExpression {
         });
         JMS_PROPERTY_EXPRESSIONS.put("JMSTimestamp", new SubExpression() {
 
+            @Override
             public Object evaluate(StompJmsMessage message) {
                 return Long.valueOf(message.getJMSTimestamp());
             }
         });
         JMS_PROPERTY_EXPRESSIONS.put("JMSCorrelationID", new SubExpression() {
 
+            @Override
             public Object evaluate(StompJmsMessage message) {
                 return message.getJMSCorrelationID();
             }
         });
         JMS_PROPERTY_EXPRESSIONS.put("JMSExpiration", new SubExpression() {
 
+            @Override
             public Object evaluate(StompJmsMessage message) {
                 return Long.valueOf(message.getJMSExpiration());
             }
         });
         JMS_PROPERTY_EXPRESSIONS.put("JMSRedelivered", new SubExpression() {
 
+            @Override
             public Object evaluate(StompJmsMessage message) {
                 return Boolean.valueOf(message.isRedelivered());
             }
         });
         JMS_PROPERTY_EXPRESSIONS.put("JMSXDeliveryCount", new SubExpression() {
 
+            @Override
             public Object evaluate(StompJmsMessage message) {
                 return Integer.valueOf(message.getRedeliveryCounter() + 1);
             }
@@ -132,15 +141,11 @@ public class PropertyExpression {
     }
 
 
-    public Object evaluate(StompJmsMessage message) throws JMSException {
+    public Object evaluate(StompJmsMessage message) {
         if (jmsPropertyExpression != null) {
             return jmsPropertyExpression.evaluate(message);
         }
-        try {
-            return message.getProperties().get(name);
-        } catch (IOException ioe) {
-            throw StompJmsExceptionSupport.create(ioe);
-        }
+        return message.getProperties().get(name);
     }
 
     public String getName() {
@@ -150,6 +155,7 @@ public class PropertyExpression {
     /**
      * @see java.lang.Object#toString()
      */
+    @Override
     public String toString() {
         return name;
     }
@@ -157,6 +163,7 @@ public class PropertyExpression {
     /**
      * @see java.lang.Object#hashCode()
      */
+    @Override
     public int hashCode() {
         return name.hashCode();
     }
@@ -164,6 +171,7 @@ public class PropertyExpression {
     /**
      * @see java.lang.Object#equals(java.lang.Object)
      */
+    @Override
     public boolean equals(Object o) {
 
         if (o == null || !this.getClass().equals(o.getClass())) {

@@ -10,18 +10,30 @@
 
 package org.fusesource.stomp.codec;
 
+import static org.fusesource.stomp.client.Constants.COLON_BYTE;
+import static org.fusesource.stomp.client.Constants.COLON_ESCAPE_SEQ;
+import static org.fusesource.stomp.client.Constants.CONTENT_LENGTH;
+import static org.fusesource.stomp.client.Constants.ESCAPE_BYTE;
+import static org.fusesource.stomp.client.Constants.ESCAPE_ESCAPE_SEQ;
+import static org.fusesource.stomp.client.Constants.MESSAGE_HEADER;
+import static org.fusesource.stomp.client.Constants.NEWLINE_BYTE;
+import static org.fusesource.stomp.client.Constants.NEWLINE_ESCAPE_SEQ;
+import static org.fusesource.stomp.client.Constants.NULL_BYTE;
+
+import java.io.DataOutput;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.fusesource.hawtbuf.AsciiBuffer;
 import org.fusesource.hawtbuf.Buffer;
 import org.fusesource.hawtbuf.ByteArrayOutputStream;
 import org.fusesource.hawtbuf.DataByteArrayOutputStream;
-
-import java.io.DataOutput;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.util.*;
-
-import static org.fusesource.stomp.client.Constants.*;
 
 /**
  * Represents all the data in a STOMP frame.
@@ -30,7 +42,7 @@ import static org.fusesource.stomp.client.Constants.*;
  */
 public class StompFrame {
 
-    public static final Buffer NO_DATA = new Buffer(new byte[]{});
+    public static final Buffer NO_DATA = new Buffer(new byte[] {});
 
     static public class HeaderEntry {
         public final AsciiBuffer key;
@@ -51,8 +63,7 @@ public class StompFrame {
 
         @Override
         public String toString() {
-            return "" + key +
-                    "=" + value;
+            return "" + key + "=" + value;
         }
     }
 
@@ -68,13 +79,15 @@ public class StompFrame {
         this.action = action;
     }
 
+    @Override
     public StompFrame clone() {
         StompFrame rc = new StompFrame(action);
-        if( headerList!=null ) {
+        if (headerList != null) {
             rc.headerList = new ArrayList<HeaderEntry>(headerList);
             rc.headerMap = null;
-        } else {
-            rc.headerMap = new HashMap<AsciiBuffer,AsciiBuffer>(headerMap);
+        }
+        else {
+            rc.headerMap = new HashMap<AsciiBuffer, AsciiBuffer>(headerMap);
             rc.headerList = null;
         }
         rc.content = content;
@@ -110,16 +123,17 @@ public class StompFrame {
     }
 
     public Map<AsciiBuffer, AsciiBuffer> headerMap() {
-        return headerMap(Collections.EMPTY_SET);
+        Set<AsciiBuffer> emptySet = Collections.emptySet();
+        return headerMap(emptySet);
     }
 
     public Map<AsciiBuffer, AsciiBuffer> headerMap(Set<AsciiBuffer> reversedHeaderHandling) {
-        if( headerMap==null ) {
+        if (headerMap == null) {
             headerMap = new HashMap<AsciiBuffer, AsciiBuffer>();
             for (HeaderEntry HeaderEntry : headerList) {
                 final AsciiBuffer key = HeaderEntry.getKey();
                 AsciiBuffer old = headerMap.put(key, HeaderEntry.getValue());
-                if( old !=null && !reversedHeaderHandling.contains(key) ) {
+                if (old != null && !reversedHeaderHandling.contains(key)) {
                     headerMap.put(key, old);
                 }
             }
@@ -129,8 +143,8 @@ public class StompFrame {
     }
 
     public List<HeaderEntry> headerList() {
-        if( headerList==null ) {
-            for (Map.Entry<AsciiBuffer,AsciiBuffer> entry : headerMap.entrySet()) {
+        if (headerList == null) {
+            for (Map.Entry<AsciiBuffer, AsciiBuffer> entry : headerMap.entrySet()) {
                 headerList.add(new HeaderEntry(entry.getKey(), entry.getValue()));
             }
             headerMap = null;
@@ -139,30 +153,31 @@ public class StompFrame {
     }
 
     public void addHeader(AsciiBuffer key, AsciiBuffer value) {
-        if( headerList!=null ) {
+        if (headerList != null) {
             headerList.add(0, new HeaderEntry(key, value));
-        } else {
+        }
+        else {
             headerMap.put(key, value);
         }
     }
 
     public AsciiBuffer getHeader(AsciiBuffer key) {
-        if( headerList!=null ) {
+        if (headerList != null) {
             for (HeaderEntry HeaderEntry : headerList) {
-                if( HeaderEntry.getKey().equals(key) ) {
+                if (HeaderEntry.getKey().equals(key)) {
                     return HeaderEntry.getValue();
                 }
             }
             return null;
-        } else {
-            return headerMap.get(key);
         }
+        return headerMap.get(key);
     }
 
     public void clearHeaders() {
-        if( headerList!=null) {
+        if (headerList != null) {
             headerList.clear();
-        } else {
+        }
+        else {
             headerMap.clear();
         }
     }
@@ -200,12 +215,13 @@ public class StompFrame {
 
     public int size() {
         int rc = action.length() + 1;
-        if( headerList!=null ) {
+        if (headerList != null) {
             for (HeaderEntry entry : headerList) {
                 rc += entry.getKey().length() + entry.getValue().length() + 2;
             }
-        } else {
-            for (Map.Entry<AsciiBuffer,AsciiBuffer> entry : headerMap.entrySet()) {
+        }
+        else {
+            for (Map.Entry<AsciiBuffer, AsciiBuffer> entry : headerMap.entrySet()) {
                 rc += entry.getKey().length() + entry.getValue().length() + 2;
             }
         }
@@ -217,15 +233,16 @@ public class StompFrame {
         write(out, action);
         out.writeByte(NEWLINE_BYTE);
 
-        if( headerList!=null ) {
+        if (headerList != null) {
             for (HeaderEntry entry : headerList) {
                 write(out, entry.getKey());
                 out.writeByte(COLON_BYTE);
                 write(out, entry.getValue());
                 out.writeByte(NEWLINE_BYTE);
             }
-        } else {
-            for (Map.Entry<AsciiBuffer,AsciiBuffer> entry : headerMap.entrySet()) {
+        }
+        else {
+            for (Map.Entry<AsciiBuffer, AsciiBuffer> entry : headerMap.entrySet()) {
                 write(out, entry.getKey());
                 out.writeByte(COLON_BYTE);
                 write(out, entry.getValue());
@@ -233,7 +250,7 @@ public class StompFrame {
             }
         }
 
-        //denotes end of headers with a new line
+        // denotes end of headers with a new line
         out.writeByte(NEWLINE_BYTE);
         if (includeBody) {
             write(out, content);
@@ -242,6 +259,7 @@ public class StompFrame {
         }
     }
 
+    @Override
     public String toString() {
         return toBuffer(false).ascii().toString();
     }
@@ -250,36 +268,37 @@ public class StompFrame {
         AsciiBuffer value = getHeader(MESSAGE_HEADER);
         if (value != null) {
             return decodeHeader(value);
-        } else {
-            return contentAsString();
         }
+        return contentAsString();
     }
 
     public static String decodeHeader(Buffer value) {
         if (value == null)
             return null;
 
-        ByteArrayOutputStream rc = new ByteArrayOutputStream(value.length);
-        Buffer pos = new Buffer(value);
-        int max = value.offset + value.length;
-        while (pos.offset < max) {
-            if (pos.startsWith(ESCAPE_ESCAPE_SEQ)) {
-                rc.write(ESCAPE_BYTE);
-                pos.moveHead(2);
-            } else if (pos.startsWith(COLON_ESCAPE_SEQ)) {
-                rc.write(COLON_BYTE);
-                pos.moveHead(2);
-            } else if (pos.startsWith(NEWLINE_ESCAPE_SEQ)) {
-                rc.write(NEWLINE_BYTE);
-                pos.moveHead(2);
-            } else {
-                rc.write(pos.data[pos.offset]);
-                pos.moveHead(1);
+        try (ByteArrayOutputStream rc = new ByteArrayOutputStream(value.length);) {
+            Buffer pos = new Buffer(value);
+            int max = value.offset + value.length;
+            while (pos.offset < max) {
+                if (pos.startsWith(ESCAPE_ESCAPE_SEQ)) {
+                    rc.write(ESCAPE_BYTE);
+                    pos.moveHead(2);
+                }
+                else if (pos.startsWith(COLON_ESCAPE_SEQ)) {
+                    rc.write(COLON_BYTE);
+                    pos.moveHead(2);
+                }
+                else if (pos.startsWith(NEWLINE_ESCAPE_SEQ)) {
+                    rc.write(NEWLINE_BYTE);
+                    pos.moveHead(2);
+                }
+                else {
+                    rc.write(pos.data[pos.offset]);
+                    pos.moveHead(1);
+                }
             }
-        }
-        try {
             return new String(rc.toByteArray(), "UTF-8");
-        } catch (UnsupportedEncodingException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e); // not expected.
         }
     }
@@ -289,9 +308,9 @@ public class StompFrame {
             return null;
         try {
             byte[] data = value.getBytes("UTF-8");
-            ByteArrayOutputStream rc = new ByteArrayOutputStream(data.length);
-            for (byte d : data) {
-                switch (d) {
+            try (ByteArrayOutputStream rc = new ByteArrayOutputStream(data.length);) {
+                for (byte d : data) {
+                    switch (d) {
                     case ESCAPE_BYTE:
                         rc.write(ESCAPE_ESCAPE_SEQ);
                         break;
@@ -303,16 +322,19 @@ public class StompFrame {
                         break;
                     default:
                         rc.write(d);
+                    }
                 }
+                return rc.toBuffer().ascii();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
-            return rc.toBuffer().ascii();
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e); // not expected.
         }
     }
 
     public static Map<AsciiBuffer, AsciiBuffer> encodeHeaders(Map<String, String> headers) {
-        if(headers==null)
+        if (headers == null)
             return null;
         HashMap<AsciiBuffer, AsciiBuffer> rc = new HashMap<AsciiBuffer, AsciiBuffer>(headers.size());
         for (Map.Entry<String, String> entry : headers.entrySet()) {

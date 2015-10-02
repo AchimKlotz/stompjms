@@ -10,10 +10,28 @@
 
 package org.fusesource.stomp.jms.message;
 
-import org.fusesource.stomp.jms.*;
-
-import javax.jms.*;
 import java.util.Enumeration;
+
+import javax.jms.BytesMessage;
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.MapMessage;
+import javax.jms.Message;
+import javax.jms.MessageEOFException;
+import javax.jms.ObjectMessage;
+import javax.jms.Queue;
+import javax.jms.StreamMessage;
+import javax.jms.TemporaryQueue;
+import javax.jms.TemporaryTopic;
+import javax.jms.TextMessage;
+import javax.jms.Topic;
+
+import org.fusesource.stomp.jms.StompJmsConnection;
+import org.fusesource.stomp.jms.StompJmsDestination;
+import org.fusesource.stomp.jms.StompJmsQueue;
+import org.fusesource.stomp.jms.StompJmsTempQueue;
+import org.fusesource.stomp.jms.StompJmsTempTopic;
+import org.fusesource.stomp.jms.StompJmsTopic;
 
 /**
  * A helper class for converting normal JMS interfaces into StompJms specific
@@ -43,16 +61,15 @@ public final class StompJmsMessageTransformation {
             if (destination instanceof StompJmsDestination) {
                 return (StompJmsDestination) destination;
 
-            } else {
-                if (destination instanceof TemporaryQueue) {
-                    result = new StompJmsTempQueue(connection.getQueuePrefix(), ((TemporaryQueue) destination).getQueueName());
-                } else if (destination instanceof TemporaryTopic) {
-                    result = new StompJmsTempTopic(connection.getTopicPrefix(), ((TemporaryTopic) destination).getTopicName());
-                } else if (destination instanceof Queue) {
-                    result = new StompJmsQueue(connection, ((Queue) destination).getQueueName());
-                } else if (destination instanceof Topic) {
-                    result = new StompJmsTopic(connection, ((Topic) destination).getTopicName());
-                }
+            }
+            if (destination instanceof TemporaryQueue) {
+                result = new StompJmsTempQueue(connection.getQueuePrefix(), ((TemporaryQueue) destination).getQueueName());
+            } else if (destination instanceof TemporaryTopic) {
+                result = new StompJmsTempTopic(connection.getTopicPrefix(), ((TemporaryTopic) destination).getTopicName());
+            } else if (destination instanceof Queue) {
+                result = new StompJmsQueue(connection, ((Queue) destination).getQueueName());
+            } else if (destination instanceof Topic) {
+                result = new StompJmsTopic(connection, ((Topic) destination).getTopicName());
             }
         }
 
@@ -73,73 +90,72 @@ public final class StompJmsMessageTransformation {
     public static StompJmsMessage transformMessage(StompJmsConnection connection, Message message)
             throws JMSException {
         if (message instanceof StompJmsMessage) {
-            return (StompJmsMessage) ((StompJmsMessage) message).copy();
+            return ((StompJmsMessage) message).copy();
 
-        } else {
-            StompJmsMessage activeMessage = null;
+        }
+        StompJmsMessage activeMessage = null;
 
-            if (message instanceof BytesMessage) {
-                BytesMessage bytesMsg = (BytesMessage) message;
-                bytesMsg.reset();
-                StompJmsBytesMessage msg = new StompJmsBytesMessage();
-                try {
-                    for (; ;) {
-                        // Reads a byte from the message stream until the stream
-                        // is empty
-                        msg.writeByte(bytesMsg.readByte());
-                    }
-                } catch (MessageEOFException e) {
-                    // if an end of message stream as expected
-                } catch (JMSException e) {
+        if (message instanceof BytesMessage) {
+            BytesMessage bytesMsg = (BytesMessage) message;
+            bytesMsg.reset();
+            StompJmsBytesMessage msg = new StompJmsBytesMessage();
+            try {
+                for (; ;) {
+                    // Reads a byte from the message stream until the stream
+                    // is empty
+                    msg.writeByte(bytesMsg.readByte());
                 }
-
-                activeMessage = msg;
-            } else if (message instanceof MapMessage) {
-                MapMessage mapMsg = (MapMessage) message;
-                StompJmsMapMessage msg = new StompJmsMapMessage();
-                Enumeration iter = mapMsg.getMapNames();
-
-                while (iter.hasMoreElements()) {
-                    String name = iter.nextElement().toString();
-                    msg.setObject(name, mapMsg.getObject(name));
-                }
-
-                activeMessage = msg;
-            } else if (message instanceof ObjectMessage) {
-                ObjectMessage objMsg = (ObjectMessage) message;
-                StompJmsObjectMessage msg = new StompJmsObjectMessage();
-                msg.setObject(objMsg.getObject());
-                msg.storeContent();
-                activeMessage = msg;
-            } else if (message instanceof StreamMessage) {
-                StreamMessage streamMessage = (StreamMessage) message;
-                streamMessage.reset();
-                StompJmsStreamMessage msg = new StompJmsStreamMessage();
-                Object obj = null;
-
-                try {
-                    while ((obj = streamMessage.readObject()) != null) {
-                        msg.writeObject(obj);
-                    }
-                } catch (MessageEOFException e) {
-                    // if an end of message stream as expected
-                } catch (JMSException e) {
-                }
-
-                activeMessage = msg;
-            } else if (message instanceof TextMessage) {
-                TextMessage textMsg = (TextMessage) message;
-                StompJmsTextMessage msg = new StompJmsTextMessage();
-                msg.setText(textMsg.getText());
-                activeMessage = msg;
-            } else {
-                activeMessage = new StompJmsMessage();
+            } catch (MessageEOFException e) {
+                // if an end of message stream as expected
+            } catch (JMSException e) {
             }
 
-            copyProperties(connection, message, activeMessage);
+            activeMessage = msg;
+        } else if (message instanceof MapMessage) {
+            MapMessage mapMsg = (MapMessage) message;
+            StompJmsMapMessage msg = new StompJmsMapMessage();
+            Enumeration<?> iter = mapMsg.getMapNames();
 
-            return activeMessage;
+            while (iter.hasMoreElements()) {
+                String name = iter.nextElement().toString();
+                msg.setObject(name, mapMsg.getObject(name));
+            }
+
+            activeMessage = msg;
+        } else if (message instanceof ObjectMessage) {
+            ObjectMessage objMsg = (ObjectMessage) message;
+            StompJmsObjectMessage msg = new StompJmsObjectMessage();
+            msg.setObject(objMsg.getObject());
+            msg.storeContent();
+            activeMessage = msg;
+        } else if (message instanceof StreamMessage) {
+            StreamMessage streamMessage = (StreamMessage) message;
+            streamMessage.reset();
+            StompJmsStreamMessage msg = new StompJmsStreamMessage();
+            Object obj = null;
+
+            try {
+                while ((obj = streamMessage.readObject()) != null) {
+                    msg.writeObject(obj);
+                }
+            } catch (MessageEOFException e) {
+                // if an end of message stream as expected
+            } catch (JMSException e) {
+            }
+
+            activeMessage = msg;
+        } else if (message instanceof TextMessage) {
+            TextMessage textMsg = (TextMessage) message;
+            StompJmsTextMessage msg = new StompJmsTextMessage();
+            msg.setText(textMsg.getText());
+            activeMessage = msg;
+        } else {
+            activeMessage = new StompJmsMessage();
         }
+
+        copyProperties(connection, message, activeMessage);
+
+        return activeMessage;
     }
 
     /**
@@ -162,7 +178,7 @@ public final class StompJmsMessageTransformation {
         toMessage.setJMSPriority(fromMessage.getJMSPriority());
         toMessage.setJMSTimestamp(fromMessage.getJMSTimestamp());
 
-        Enumeration propertyNames = fromMessage.getPropertyNames();
+        Enumeration<?> propertyNames = fromMessage.getPropertyNames();
 
         while (propertyNames.hasMoreElements()) {
             String name = propertyNames.nextElement().toString();

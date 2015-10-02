@@ -10,18 +10,22 @@
 
 package org.fusesource.stomp.jms.message;
 
-import org.fusesource.hawtbuf.Buffer;
-import org.fusesource.hawtbuf.ByteArrayInputStream;
-import org.fusesource.hawtbuf.DataByteArrayInputStream;
-import org.fusesource.hawtbuf.DataByteArrayOutputStream;
-import org.fusesource.stomp.jms.StompJmsExceptionSupport;
-import org.fusesource.stomp.jms.util.MarshallingSupport;
-
-import javax.jms.*;
-import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.IOException;
+
+import javax.jms.JMSException;
+import javax.jms.MessageEOFException;
+import javax.jms.MessageFormatException;
+import javax.jms.MessageNotReadableException;
+import javax.jms.MessageNotWriteableException;
+import javax.jms.StreamMessage;
+
+import org.fusesource.hawtbuf.Buffer;
+import org.fusesource.hawtbuf.ByteArrayInputStream;
+import org.fusesource.hawtbuf.DataByteArrayOutputStream;
+import org.fusesource.stomp.jms.StompJmsExceptionSupport;
+import org.fusesource.stomp.jms.util.MarshallingSupport;
 
 /**
  * A <CODE>StreamMessage</CODE> object is used to send a stream of primitive
@@ -105,10 +109,12 @@ public class StompJmsStreamMessage extends StompJmsMessage implements StreamMess
     protected transient DataInputStream dataIn;
     protected transient int remainingBytes = -1;
 
+    @Override
     public JmsMsgType getMsgType() {
         return JmsMsgType.STREAM;
     }
 
+    @Override
     public StompJmsMessage copy() throws JMSException {
         StompJmsStreamMessage other = new StompJmsStreamMessage();
         other.copy(this);
@@ -122,11 +128,13 @@ public class StompJmsStreamMessage extends StompJmsMessage implements StreamMess
         this.dataIn = null;
     }
 
+    @Override
     public void onSend() throws JMSException {
         super.onSend();
         storeContent();
     }
 
+    @Override
     public void storeContent() throws JMSException {
         if (dataOut != null) {
             try {
@@ -153,6 +161,7 @@ public class StompJmsStreamMessage extends StompJmsMessage implements StreamMess
      *                      some internal error.
      */
 
+    @Override
     public void clearBody() throws JMSException {
         super.clearBody();
         this.dataOut = null;
@@ -171,6 +180,7 @@ public class StompJmsStreamMessage extends StompJmsMessage implements StreamMess
      * @throws MessageNotReadableException if the message is in write-only mode.
      */
 
+    @Override
     public boolean readBoolean() throws JMSException {
         initializeReading();
         try {
@@ -189,10 +199,9 @@ public class StompJmsStreamMessage extends StompJmsMessage implements StreamMess
             if (dataType == MarshallingSupport.NULL) {
                 this.dataIn.reset();
                 throw new NullPointerException("Cannot convert NULL value to boolean.");
-            } else {
-                this.dataIn.reset();
-                throw new MessageFormatException(" not a boolean type");
             }
+            this.dataIn.reset();
+            throw new MessageFormatException(" not a boolean type");
         } catch (EOFException e) {
             throw StompJmsExceptionSupport.createMessageEOFException(e);
         } catch (IOException e) {
@@ -212,6 +221,7 @@ public class StompJmsStreamMessage extends StompJmsMessage implements StreamMess
      * @throws MessageNotReadableException if the message is in write-only mode.
      */
 
+    @Override
     public byte readByte() throws JMSException {
         initializeReading();
         try {
@@ -230,10 +240,9 @@ public class StompJmsStreamMessage extends StompJmsMessage implements StreamMess
             if (dataType == MarshallingSupport.NULL) {
                 this.dataIn.reset();
                 throw new NullPointerException("Cannot convert NULL value to byte.");
-            } else {
-                this.dataIn.reset();
-                throw new MessageFormatException(" not a byte type");
             }
+            this.dataIn.reset();
+            throw new MessageFormatException(" not a byte type");
         } catch (NumberFormatException mfe) {
             try {
                 this.dataIn.reset();
@@ -260,6 +269,7 @@ public class StompJmsStreamMessage extends StompJmsMessage implements StreamMess
      * @throws MessageNotReadableException if the message is in write-only mode.
      */
 
+    @Override
     public short readShort() throws JMSException {
         initializeReading();
         try {
@@ -281,10 +291,9 @@ public class StompJmsStreamMessage extends StompJmsMessage implements StreamMess
             if (dataType == MarshallingSupport.NULL) {
                 this.dataIn.reset();
                 throw new NullPointerException("Cannot convert NULL value to short.");
-            } else {
-                this.dataIn.reset();
-                throw new MessageFormatException(" not a short type");
             }
+            this.dataIn.reset();
+            throw new MessageFormatException(" not a short type");
         } catch (NumberFormatException mfe) {
             try {
                 this.dataIn.reset();
@@ -312,6 +321,7 @@ public class StompJmsStreamMessage extends StompJmsMessage implements StreamMess
      * @throws MessageNotReadableException if the message is in write-only mode.
      */
 
+    @Override
     public char readChar() throws JMSException {
         initializeReading();
         try {
@@ -327,10 +337,9 @@ public class StompJmsStreamMessage extends StompJmsMessage implements StreamMess
             if (dataType == MarshallingSupport.NULL) {
                 this.dataIn.reset();
                 throw new NullPointerException("Cannot convert NULL value to char.");
-            } else {
-                this.dataIn.reset();
-                throw new MessageFormatException(" not a char type");
             }
+            this.dataIn.reset();
+            throw new MessageFormatException(" not a char type");
         } catch (NumberFormatException mfe) {
             try {
                 this.dataIn.reset();
@@ -358,6 +367,7 @@ public class StompJmsStreamMessage extends StompJmsMessage implements StreamMess
      * @throws MessageNotReadableException if the message is in write-only mode.
      */
 
+    @Override
     public int readInt() throws JMSException {
         initializeReading();
         try {
@@ -382,10 +392,9 @@ public class StompJmsStreamMessage extends StompJmsMessage implements StreamMess
             if (dataType == MarshallingSupport.NULL) {
                 this.dataIn.reset();
                 throw new NullPointerException("Cannot convert NULL value to int.");
-            } else {
-                this.dataIn.reset();
-                throw new MessageFormatException(" not an int type");
             }
+            this.dataIn.reset();
+            throw new MessageFormatException(" not an int type");
         } catch (NumberFormatException mfe) {
             try {
                 this.dataIn.reset();
@@ -413,6 +422,7 @@ public class StompJmsStreamMessage extends StompJmsMessage implements StreamMess
      * @throws MessageNotReadableException if the message is in write-only mode.
      */
 
+    @Override
     public long readLong() throws JMSException {
         initializeReading();
         try {
@@ -440,10 +450,9 @@ public class StompJmsStreamMessage extends StompJmsMessage implements StreamMess
             if (dataType == MarshallingSupport.NULL) {
                 this.dataIn.reset();
                 throw new NullPointerException("Cannot convert NULL value to long.");
-            } else {
-                this.dataIn.reset();
-                throw new MessageFormatException(" not a long type");
             }
+            this.dataIn.reset();
+            throw new MessageFormatException(" not a long type");
         } catch (NumberFormatException mfe) {
             try {
                 this.dataIn.reset();
@@ -470,6 +479,7 @@ public class StompJmsStreamMessage extends StompJmsMessage implements StreamMess
      * @throws MessageNotReadableException if the message is in write-only mode.
      */
 
+    @Override
     public float readFloat() throws JMSException {
         initializeReading();
         try {
@@ -487,10 +497,9 @@ public class StompJmsStreamMessage extends StompJmsMessage implements StreamMess
             if (dataType == MarshallingSupport.NULL) {
                 this.dataIn.reset();
                 throw new NullPointerException("Cannot convert NULL value to float.");
-            } else {
-                this.dataIn.reset();
-                throw new MessageFormatException(" not a float type");
             }
+            this.dataIn.reset();
+            throw new MessageFormatException(" not a float type");
         } catch (NumberFormatException mfe) {
             try {
                 this.dataIn.reset();
@@ -517,6 +526,7 @@ public class StompJmsStreamMessage extends StompJmsMessage implements StreamMess
      * @throws MessageNotReadableException if the message is in write-only mode.
      */
 
+    @Override
     public double readDouble() throws JMSException {
         initializeReading();
         try {
@@ -538,10 +548,9 @@ public class StompJmsStreamMessage extends StompJmsMessage implements StreamMess
             if (dataType == MarshallingSupport.NULL) {
                 this.dataIn.reset();
                 throw new NullPointerException("Cannot convert NULL value to double.");
-            } else {
-                this.dataIn.reset();
-                throw new MessageFormatException(" not a double type");
             }
+            this.dataIn.reset();
+            throw new MessageFormatException(" not a double type");
         } catch (NumberFormatException mfe) {
             try {
                 this.dataIn.reset();
@@ -568,6 +577,7 @@ public class StompJmsStreamMessage extends StompJmsMessage implements StreamMess
      * @throws MessageNotReadableException if the message is in write-only mode.
      */
 
+    @Override
     public String readString() throws JMSException {
         initializeReading();
         try {
@@ -609,10 +619,9 @@ public class StompJmsStreamMessage extends StompJmsMessage implements StreamMess
             }
             if (dataType == MarshallingSupport.CHAR_TYPE) {
                 return new Character(this.dataIn.readChar()).toString();
-            } else {
-                this.dataIn.reset();
-                throw new MessageFormatException(" not a String type");
             }
+            this.dataIn.reset();
+            throw new MessageFormatException(" not a String type");
         } catch (NumberFormatException mfe) {
             try {
                 this.dataIn.reset();
@@ -668,6 +677,7 @@ public class StompJmsStreamMessage extends StompJmsMessage implements StreamMess
      * @see #readObject()
      */
 
+    @Override
     public int readBytes(byte[] value) throws JMSException {
 
         initializeReading();
@@ -696,12 +706,11 @@ public class StompJmsStreamMessage extends StompJmsMessage implements StreamMess
                 remainingBytes -= value.length;
                 this.dataIn.readFully(value);
                 return value.length;
-            } else {
-                // big buffer
-                int rc = this.dataIn.read(value, 0, remainingBytes);
-                remainingBytes = 0;
-                return rc;
             }
+            // big buffer
+            int rc = this.dataIn.read(value, 0, remainingBytes);
+            remainingBytes = 0;
+            return rc;
 
         } catch (Throwable e) {
             throw StompJmsExceptionSupport.createMessageFormatException(e);
@@ -737,6 +746,7 @@ public class StompJmsStreamMessage extends StompJmsMessage implements StreamMess
      * @see #readBytes(byte[] value)
      */
 
+    @Override
     public Object readObject() throws JMSException {
         initializeReading();
         try {
@@ -783,10 +793,9 @@ public class StompJmsStreamMessage extends StompJmsMessage implements StreamMess
                 byte[] value = new byte[len];
                 this.dataIn.readFully(value);
                 return value;
-            } else {
-                this.dataIn.reset();
-                throw new MessageFormatException("unknown type");
             }
+            this.dataIn.reset();
+            throw new MessageFormatException("unknown type");
         } catch (NumberFormatException mfe) {
             try {
                 this.dataIn.reset();
@@ -813,6 +822,7 @@ public class StompJmsStreamMessage extends StompJmsMessage implements StreamMess
      * @throws MessageNotWriteableException if the message is in read-only mode.
      */
 
+    @Override
     public void writeBoolean(boolean value) throws JMSException {
         initializeWriting();
         try {
@@ -831,6 +841,7 @@ public class StompJmsStreamMessage extends StompJmsMessage implements StreamMess
      * @throws MessageNotWriteableException if the message is in read-only mode.
      */
 
+    @Override
     public void writeByte(byte value) throws JMSException {
         initializeWriting();
         try {
@@ -849,6 +860,7 @@ public class StompJmsStreamMessage extends StompJmsMessage implements StreamMess
      * @throws MessageNotWriteableException if the message is in read-only mode.
      */
 
+    @Override
     public void writeShort(short value) throws JMSException {
         initializeWriting();
         try {
@@ -867,6 +879,7 @@ public class StompJmsStreamMessage extends StompJmsMessage implements StreamMess
      * @throws MessageNotWriteableException if the message is in read-only mode.
      */
 
+    @Override
     public void writeChar(char value) throws JMSException {
         initializeWriting();
         try {
@@ -885,6 +898,7 @@ public class StompJmsStreamMessage extends StompJmsMessage implements StreamMess
      * @throws MessageNotWriteableException if the message is in read-only mode.
      */
 
+    @Override
     public void writeInt(int value) throws JMSException {
         initializeWriting();
         try {
@@ -903,6 +917,7 @@ public class StompJmsStreamMessage extends StompJmsMessage implements StreamMess
      * @throws MessageNotWriteableException if the message is in read-only mode.
      */
 
+    @Override
     public void writeLong(long value) throws JMSException {
         initializeWriting();
         try {
@@ -921,6 +936,7 @@ public class StompJmsStreamMessage extends StompJmsMessage implements StreamMess
      * @throws MessageNotWriteableException if the message is in read-only mode.
      */
 
+    @Override
     public void writeFloat(float value) throws JMSException {
         initializeWriting();
         try {
@@ -939,6 +955,7 @@ public class StompJmsStreamMessage extends StompJmsMessage implements StreamMess
      * @throws MessageNotWriteableException if the message is in read-only mode.
      */
 
+    @Override
     public void writeDouble(double value) throws JMSException {
         initializeWriting();
         try {
@@ -957,6 +974,7 @@ public class StompJmsStreamMessage extends StompJmsMessage implements StreamMess
      * @throws MessageNotWriteableException if the message is in read-only mode.
      */
 
+    @Override
     public void writeString(String value) throws JMSException {
         initializeWriting();
         try {
@@ -984,6 +1002,7 @@ public class StompJmsStreamMessage extends StompJmsMessage implements StreamMess
      * @throws MessageNotWriteableException if the message is in read-only mode.
      */
 
+    @Override
     public void writeBytes(byte[] value) throws JMSException {
         writeBytes(value, 0, value.length);
     }
@@ -1005,6 +1024,7 @@ public class StompJmsStreamMessage extends StompJmsMessage implements StreamMess
      * @throws MessageNotWriteableException if the message is in read-only mode.
      */
 
+    @Override
     public void writeBytes(byte[] value, int offset, int length) throws JMSException {
         initializeWriting();
         try {
@@ -1029,6 +1049,7 @@ public class StompJmsStreamMessage extends StompJmsMessage implements StreamMess
      * @throws MessageNotWriteableException if the message is in read-only mode.
      */
 
+    @Override
     public void writeObject(Object value) throws JMSException {
         initializeWriting();
         if (value == null) {
@@ -1069,6 +1090,7 @@ public class StompJmsStreamMessage extends StompJmsMessage implements StreamMess
      * @throws JMSException if an internal error occurs
      */
 
+    @Override
     public void reset() throws JMSException {
         storeContent();
         this.dataIn = null;
@@ -1101,6 +1123,7 @@ public class StompJmsStreamMessage extends StompJmsMessage implements StreamMess
         }
     }
 
+    @Override
     public String toString() {
         return super.toString() + " StompJmsStreamMessage{ dataOut = " + dataOut
                 + ", dataIn = " + dataIn + " }";

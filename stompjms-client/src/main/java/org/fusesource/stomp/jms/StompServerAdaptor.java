@@ -9,17 +9,18 @@
  */
 package org.fusesource.stomp.jms;
 
-import org.fusesource.hawtbuf.AsciiBuffer;
-import org.fusesource.stomp.codec.StompFrame;
+import static org.fusesource.stomp.client.Constants.ID;
+import static org.fusesource.stomp.client.Constants.UNSUBSCRIBE;
+
+import java.util.Map;
+import java.util.UUID;
 
 import javax.jms.JMSException;
 import javax.jms.TemporaryQueue;
 import javax.jms.TemporaryTopic;
-import java.util.Map;
-import java.util.UUID;
 
-import static org.fusesource.stomp.client.Constants.*;
-import static org.fusesource.stomp.client.Constants.ID;
+import org.fusesource.hawtbuf.AsciiBuffer;
+import org.fusesource.stomp.codec.StompFrame;
 
 /**
  *
@@ -37,7 +38,7 @@ public class StompServerAdaptor {
         return null;
     }
 
-    public StompJmsTempTopic isTempTopic(StompJmsConnection connection, String value) throws JMSException {
+    public StompJmsTempTopic isTempTopic(StompJmsConnection connection, String value) {
         if( connection.tempTopicPrefix!=null && value.startsWith(connection.tempTopicPrefix) ) {
             return new StompJmsTempTopic(connection.tempTopicPrefix, value.substring(connection.tempTopicPrefix.length()));
         }
@@ -48,6 +49,9 @@ public class StompServerAdaptor {
         return null;
     }
 
+    /**
+     * @throws JMSException in child implementations
+     */
     public TemporaryQueue createTemporaryQueue(StompJmsSession session) throws JMSException {
         if( session.connection.tempQueuePrefix!=null ) {
             return new StompJmsTempQueue(session.connection.tempQueuePrefix, UUID.randomUUID().toString());
@@ -55,6 +59,9 @@ public class StompServerAdaptor {
         return null;
     }
 
+    /**
+     * @throws JMSException in child implementations
+     */
     public TemporaryTopic createTemporaryTopic(StompJmsSession session) throws JMSException {
         if( session.connection.tempTopicPrefix!=null ) {
             return new StompJmsTempTopic(session.connection.tempTopicPrefix, UUID.randomUUID().toString());

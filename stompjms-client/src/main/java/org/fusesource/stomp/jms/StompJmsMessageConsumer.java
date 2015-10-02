@@ -10,17 +10,6 @@
 
 package org.fusesource.stomp.jms;
 
-import org.fusesource.hawtbuf.AsciiBuffer;
-import org.fusesource.hawtdispatch.CustomDispatchSource;
-import org.fusesource.hawtdispatch.Dispatch;
-import org.fusesource.hawtdispatch.OrderedEventAggregator;
-import org.fusesource.hawtdispatch.Task;
-import org.fusesource.stomp.client.Promise;
-import org.fusesource.stomp.codec.StompFrame;
-import org.fusesource.stomp.jms.message.StompJmsMessage;
-
-import javax.jms.IllegalStateException;
-import javax.jms.*;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -28,11 +17,23 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import javax.jms.IllegalStateException;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageListener;
+import javax.jms.Session;
+
+import org.fusesource.hawtbuf.AsciiBuffer;
+import org.fusesource.stomp.client.Promise;
+import org.fusesource.stomp.codec.StompFrame;
+import org.fusesource.stomp.jms.message.StompJmsMessage;
+
 /**
  * implementation of a Jms Message Consumer
  */
 public class StompJmsMessageConsumer implements MessageConsumer, StompJmsMessageListener {
-    
+
     final StompJmsSession session;
     final StompJmsDestination destination;
     final AsciiBuffer id;
@@ -44,7 +45,7 @@ public class StompJmsMessageConsumer implements MessageConsumer, StompJmsMessage
     final Lock lock = new ReentrantLock();
     final AtomicBoolean suspendedConnection = new AtomicBoolean();
 
-    protected StompJmsMessageConsumer(final AsciiBuffer id, StompJmsSession s, StompJmsDestination destination, String selector) throws JMSException {
+    protected StompJmsMessageConsumer(final AsciiBuffer id, StompJmsSession s, StompJmsDestination destination, String selector) {
         this.id = id;
         this.session = s;
         this.destination = destination;
@@ -80,6 +81,7 @@ public class StompJmsMessageConsumer implements MessageConsumer, StompJmsMessage
      * @throws JMSException
      * @see javax.jms.MessageConsumer#close()
      */
+    @Override
     public void close() throws JMSException {
         if(closed.compareAndSet(false, true)) {
             this.session.remove(this);
@@ -90,6 +92,7 @@ public class StompJmsMessageConsumer implements MessageConsumer, StompJmsMessage
     }
 
 
+    @Override
     public MessageListener getMessageListener() throws JMSException {
         checkClosed();
         return this.messageListener;
@@ -100,6 +103,7 @@ public class StompJmsMessageConsumer implements MessageConsumer, StompJmsMessage
      * @throws JMSException
      * @see javax.jms.MessageConsumer#getMessageSelector()
      */
+    @Override
     public String getMessageSelector() throws JMSException {
         checkClosed();
         return this.messageSelector;
@@ -110,6 +114,7 @@ public class StompJmsMessageConsumer implements MessageConsumer, StompJmsMessage
      * @throws JMSException
      * @see javax.jms.MessageConsumer#receive()
      */
+    @Override
     public Message receive() throws JMSException {
         checkClosed();
         try {
@@ -125,6 +130,7 @@ public class StompJmsMessageConsumer implements MessageConsumer, StompJmsMessage
      * @throws JMSException
      * @see javax.jms.MessageConsumer#receive(long)
      */
+    @Override
     public Message receive(long timeout) throws JMSException {
         checkClosed();
         try {
@@ -139,6 +145,7 @@ public class StompJmsMessageConsumer implements MessageConsumer, StompJmsMessage
      * @throws JMSException
      * @see javax.jms.MessageConsumer#receiveNoWait()
      */
+    @Override
     public Message receiveNoWait() throws JMSException {
         checkClosed();
         Message result = copy(ack(this.messageQueue.dequeueNoWait()));
@@ -150,6 +157,7 @@ public class StompJmsMessageConsumer implements MessageConsumer, StompJmsMessage
      * @throws JMSException
      * @see javax.jms.MessageConsumer#setMessageListener(javax.jms.MessageListener)
      */
+    @Override
     public void setMessageListener(MessageListener listener) throws JMSException {
         checkClosed();
         this.messageListener = listener;
@@ -241,11 +249,13 @@ public class StompJmsMessageConsumer implements MessageConsumer, StompJmsMessage
     /**
      * @param message
      */
+    @Override
     public void onMessage(final StompJmsMessage message) {
         lock.lock();
         try {
             if( session.acknowledgementMode == Session.CLIENT_ACKNOWLEDGE ) {
                 message.setAcknowledgeCallback(new Callable<Void>(){
+                    @Override
                     public Void call() throws Exception {
                         if( session.channel == null ) {
                             throw new javax.jms.IllegalStateException("Session closed.");
@@ -268,6 +278,7 @@ public class StompJmsMessageConsumer implements MessageConsumer, StompJmsMessage
         }
         if (this.messageListener != null && this.started) {
             session.getExecutor().execute(new Runnable() {
+                @Override
                 public void run() {
                     StompJmsMessage message;
                     while( session.isStarted() && (message=messageQueue.dequeueNoWait()) !=null ) {
@@ -331,7 +342,6 @@ public class StompJmsMessageConsumer implements MessageConsumer, StompJmsMessage
             if (!this.messageQueue.isEmpty()) {
                 List<StompJmsMessage> drain = this.messageQueue.removeAll();
                 for (StompJmsMessage m : drain) {
-                    final StompJmsMessage copy;
                     try {
                         listener.onMessage(copy(ack(m)));
                     } catch (Exception e) {
@@ -347,6 +357,9 @@ public class StompJmsMessageConsumer implements MessageConsumer, StompJmsMessage
         return this.messageQueue.size();
     }
 
+    /**
+     * @throws IllegalStateException in child implementation
+     */
     public boolean getNoLocal() throws IllegalStateException {
         return false;
     }

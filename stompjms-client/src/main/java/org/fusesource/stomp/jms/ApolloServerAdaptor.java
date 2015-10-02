@@ -9,20 +9,25 @@
  */
 package org.fusesource.stomp.jms;
 
-import org.fusesource.hawtbuf.AsciiBuffer;
-import org.fusesource.hawtbuf.Buffer;
-import org.fusesource.stomp.codec.StompFrame;
+import static org.fusesource.stomp.client.Constants.ACK;
+import static org.fusesource.stomp.client.Constants.BROWSER;
+import static org.fusesource.stomp.client.Constants.CREDIT;
+import static org.fusesource.stomp.client.Constants.ID;
+import static org.fusesource.stomp.client.Constants.PERSISTENT;
+import static org.fusesource.stomp.client.Constants.SUBSCRIPTION;
+import static org.fusesource.stomp.client.Constants.TRUE;
+import static org.fusesource.stomp.client.Constants.UNSUBSCRIBE;
+
+import java.util.Map;
+import java.util.UUID;
 
 import javax.jms.JMSException;
 import javax.jms.TemporaryQueue;
 import javax.jms.TemporaryTopic;
 
-import java.util.Map;
-import java.util.UUID;
-
-import static org.fusesource.stomp.client.Constants.*;
-import static org.fusesource.stomp.client.Constants.BROWSER;
-import static org.fusesource.stomp.client.Constants.TRUE;
+import org.fusesource.hawtbuf.AsciiBuffer;
+import org.fusesource.hawtbuf.Buffer;
+import org.fusesource.stomp.codec.StompFrame;
 
 /**
  *
@@ -43,13 +48,14 @@ public class ApolloServerAdaptor extends StompServerAdaptor {
     }
 
     @Override
-    public StompJmsTempTopic isTempTopic(StompJmsConnection connection, String value) throws JMSException {
+    public StompJmsTempTopic isTempTopic(StompJmsConnection connection, String value) {
         if( value.startsWith(connection.topicPrefix+"temp.")) {
             return new StompJmsTempTopic(connection.topicPrefix, value.substring(connection.topicPrefix.length()));
         }
         return super.isTempTopic(connection, value);
     }
 
+    @Override
     public StompFrame createCreditFrame(StompJmsMessageConsumer consumer, StompFrame messageFrame) {
         final Buffer content = messageFrame.content();
         String credit = "1";

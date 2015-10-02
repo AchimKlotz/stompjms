@@ -10,12 +10,11 @@
 
 package org.fusesource.stomp.jms;
 
-import org.fusesource.hawtbuf.AsciiBuffer;
-
 import javax.jms.IllegalStateException;
-import javax.jms.JMSException;
 import javax.jms.Topic;
 import javax.jms.TopicSubscriber;
+
+import org.fusesource.hawtbuf.AsciiBuffer;
 
 /**
  * Implementation of a TopicSubscriber
@@ -30,7 +29,7 @@ public class StompJmsTopicSubscriber extends StompJmsMessageConsumer implements 
      * @param s
      * @param destination
      */
-    StompJmsTopicSubscriber(AsciiBuffer id, StompJmsSession s, StompJmsDestination destination, boolean noLocal, String selector) throws JMSException {
+    StompJmsTopicSubscriber(AsciiBuffer id, StompJmsSession s, StompJmsDestination destination, boolean noLocal, String selector) {
         super(id, s, destination, selector);
         this.noLocal = noLocal;
     }
@@ -40,6 +39,7 @@ public class StompJmsTopicSubscriber extends StompJmsMessageConsumer implements 
      * @throws IllegalStateException
      * @see javax.jms.TopicSubscriber#getNoLocal()
      */
+    @Override
     public boolean getNoLocal() throws IllegalStateException {
         checkClosed();
         return this.noLocal;
@@ -50,6 +50,7 @@ public class StompJmsTopicSubscriber extends StompJmsMessageConsumer implements 
      * @throws IllegalStateException
      * @see javax.jms.TopicSubscriber#getTopic()
      */
+    @Override
     public Topic getTopic() throws IllegalStateException {
         checkClosed();
         return (Topic) this.destination;

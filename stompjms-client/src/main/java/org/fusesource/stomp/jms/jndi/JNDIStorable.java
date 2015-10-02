@@ -10,15 +10,16 @@
 
 package org.fusesource.stomp.jms.jndi;
 
-import javax.naming.NamingException;
-import javax.naming.Reference;
-import javax.naming.Referenceable;
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.HashMap;
 import java.util.Map;
+
+import javax.naming.NamingException;
+import javax.naming.Reference;
+import javax.naming.Referenceable;
 
 /**
  * Facilitates objects to be stored in JNDI as properties
@@ -74,6 +75,7 @@ public abstract class JNDIStorable implements Referenceable, Externalizable {
      * @return the built Reference
      * @throws NamingException if error on building Reference
      */
+    @Override
     public Reference getReference() throws NamingException {
         return JNDIReferenceFactory.createReference(this.getClass().getName(), this);
     }
@@ -84,7 +86,9 @@ public abstract class JNDIStorable implements Referenceable, Externalizable {
      * @throws ClassNotFoundException
      * @see java.io.Externalizable#readExternal(java.io.ObjectInput)
      */
+    @Override
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+        @SuppressWarnings("unchecked")
         Map<String, String> props = (Map<String, String>) in.readObject();
         if (props != null) {
             setProperties(props);
@@ -97,6 +101,7 @@ public abstract class JNDIStorable implements Referenceable, Externalizable {
      * @throws IOException
      * @see java.io.Externalizable#writeExternal(java.io.ObjectOutput)
      */
+    @Override
     public void writeExternal(ObjectOutput out) throws IOException {
         out.writeObject(getProperties());
 

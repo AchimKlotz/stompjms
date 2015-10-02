@@ -10,14 +10,20 @@
 
 package org.fusesource.stomp.jms;
 
-import org.fusesource.hawtbuf.AsciiBuffer;
-import org.fusesource.stomp.jms.message.StompJmsMessage;
+import static org.fusesource.stomp.client.Constants.BROWSER;
+import static org.fusesource.stomp.client.Constants.END;
 
-import javax.jms.IllegalStateException;
-import javax.jms.*;
 import java.util.Enumeration;
 import java.util.concurrent.atomic.AtomicBoolean;
-import static org.fusesource.stomp.client.Constants.*;
+
+import javax.jms.IllegalStateException;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.Queue;
+import javax.jms.QueueBrowser;
+
+import org.fusesource.hawtbuf.AsciiBuffer;
+import org.fusesource.stomp.jms.message.StompJmsMessage;
 
 /**
  * A client uses a <CODE>QueueBrowser</CODE> object to look at messages on a
@@ -44,7 +50,7 @@ import static org.fusesource.stomp.client.Constants.*;
  * @see javax.jms.QueueReceiver
  */
 
-public class StompJmsQueueBrowser implements QueueBrowser, Enumeration {
+public class StompJmsQueueBrowser implements QueueBrowser, Enumeration<Message> {
 
     private final StompJmsSession session;
     private final StompJmsDestination destination;
@@ -83,6 +89,7 @@ public class StompJmsQueueBrowser implements QueueBrowser, Enumeration {
                 return true;
             }
 
+            @Override
             public void onMessage(StompJmsMessage message) {
                 if (message == null) {
                     browseDone.set(true);
@@ -125,7 +132,8 @@ public class StompJmsQueueBrowser implements QueueBrowser, Enumeration {
      *                                this browser due to some internal error.
      */
 
-    public Enumeration getEnumeration() throws JMSException {
+    @Override
+    public Enumeration<Message> getEnumeration() throws JMSException {
         checkClosed();
         if (consumer == null) {
             consumer = createConsumer();
@@ -142,6 +150,7 @@ public class StompJmsQueueBrowser implements QueueBrowser, Enumeration {
     /**
      * @return true if more messages to process
      */
+    @Override
     public boolean hasMoreElements() {
         while (true) {
 
@@ -167,7 +176,8 @@ public class StompJmsQueueBrowser implements QueueBrowser, Enumeration {
     /**
      * @return the next message
      */
-    public Object nextElement() {
+    @Override
+    public Message nextElement() {
         while (true) {
 
             synchronized (this) {
@@ -195,6 +205,7 @@ public class StompJmsQueueBrowser implements QueueBrowser, Enumeration {
         }
     }
 
+    @Override
     public synchronized void close() throws JMSException {
         destroyConsumer();
         closed = true;
@@ -208,10 +219,12 @@ public class StompJmsQueueBrowser implements QueueBrowser, Enumeration {
      *                                associated with this browser due to some internal error.
      */
 
+    @Override
     public Queue getQueue() throws JMSException {
         return (Queue) destination;
     }
 
+    @Override
     public String getMessageSelector() throws JMSException {
         return selector;
     }
@@ -238,6 +251,7 @@ public class StompJmsQueueBrowser implements QueueBrowser, Enumeration {
         }
     }
 
+    @Override
     public String toString() {
         return "StompJmsQueueBrowser { value=" + this.id + " }";
     }

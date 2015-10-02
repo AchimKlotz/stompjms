@@ -412,17 +412,13 @@ public class StompChannel {
     public void onFrame(StompFrame frame) {
         AsciiBuffer action = frame.action();
         if (action.startsWith(MESSAGE)) {
-            try {
-                StompJmsMessage msg = StompTranslator.convert(frame);
-                msg.setFrame(frame);
-                msg.setReadOnlyBody(true);
-                msg.setReadOnlyProperties(true);
-                StompJmsMessageListener l = this.listener;
-                if (l != null) {
-                    l.onMessage(msg);
-                }
-            } catch (JMSException e) {
-                handleException(e);
+            StompJmsMessage msg = StompTranslator.convert(frame);
+            msg.setFrame(frame);
+            msg.setReadOnlyBody(true);
+            msg.setReadOnlyProperties(true);
+            StompJmsMessageListener l = this.listener;
+            if (l != null) {
+                l.onMessage(msg);
             }
         } else {
             handleException(new ProtocolException("Unknown STOMP action: " + action));
@@ -545,6 +541,12 @@ public class StompChannel {
         } else {
             if( started.get() ) {
                 e.printStackTrace();
+                try {
+                    this.close();
+                } catch (JMSException e1) {
+                    // TODO Auto-generated catch block
+                    e1.printStackTrace();
+                }
             }
         }
     }

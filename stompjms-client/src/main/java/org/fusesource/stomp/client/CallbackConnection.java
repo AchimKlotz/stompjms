@@ -9,20 +9,25 @@
  */
 package org.fusesource.stomp.client;
 
+import static org.fusesource.stomp.client.Constants.ERROR;
+import static org.fusesource.stomp.client.Constants.RECEIPT;
+import static org.fusesource.stomp.client.Constants.RECEIPT_ID;
+import static org.fusesource.stomp.client.Constants.RECEIPT_REQUESTED;
+import static org.fusesource.stomp.client.Constants.SEND;
+
+import java.io.IOException;
+import java.nio.channels.ClosedChannelException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.fusesource.hawtbuf.AsciiBuffer;
 import org.fusesource.hawtdispatch.DispatchQueue;
 import org.fusesource.hawtdispatch.Task;
 import org.fusesource.hawtdispatch.transport.DefaultTransportListener;
-import org.fusesource.stomp.codec.StompFrame;
 import org.fusesource.hawtdispatch.transport.Transport;
-import org.fusesource.hawtdispatch.transport.TransportListener;
-
-import java.io.IOException;
-import java.nio.channels.ClosedChannelException;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicLong;
-
-import static org.fusesource.stomp.client.Constants.*;
+import org.fusesource.stomp.codec.StompFrame;
 
 /**
  * <p>
@@ -57,14 +62,19 @@ public class CallbackConnection {
         this.transport = transport;
         this.connectedFrame = connectedFrame;
         this.transport.setTransportListener(new DefaultTransportListener() {
+            @Override
             public void onTransportCommand(Object command) {
                 processStompFrame((StompFrame)command);
             }
+            @Override
             public void onRefill() {
                 drainOverflow();
             }
+            @Override
             public void onTransportFailure(IOException error) {
                 processFailure(error);
+//                CallbackConnection.this.transport.suspendRead();
+//                CallbackConnection.this.transport.stop(null);
             }
         });
     }
@@ -140,9 +150,9 @@ public class CallbackConnection {
     }
 
     private void failRequests(Throwable failure) {
-        ArrayList<Callback<Void>> values = new ArrayList(requests.values());
+        ArrayList<Callback<StompFrame>> values = new ArrayList<>(requests.values());
         requests.clear();
-        for (Callback<Void> value : values) {
+        for (Callback<StompFrame> value : values) {
             value.onFailure(failure);
         }
 
@@ -169,6 +179,7 @@ public class CallbackConnection {
     public void close(final Runnable onComplete) {
         failRequests(new ClosedChannelException());
         this.transport.stop(new Task() {
+            @Override
             public void run() {
                 if( onComplete!=null ) {
                     onComplete.run();
@@ -185,12 +196,11 @@ public class CallbackConnection {
         getDispatchQueue().assertExecuting();
         if( this.transport.full() ) {
             return false;
-        } else {
-            if( addContentLength && SEND.equals(frame.action()) ) {
-                frame.addContentLengthHeader();
-            }
-            return this.transport.offer(frame);
         }
+        if( addContentLength && SEND.equals(frame.action()) ) {
+            frame.addContentLengthHeader();
+        }
+        return this.transport.offer(frame);
     }
 
     public boolean full() {

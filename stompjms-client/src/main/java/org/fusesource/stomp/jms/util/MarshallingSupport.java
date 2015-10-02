@@ -11,11 +11,15 @@
 package org.fusesource.stomp.jms.util;
 
 
-import org.fusesource.hawtbuf.DataByteArrayOutputStream;
-
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import org.fusesource.hawtbuf.DataByteArrayOutputStream;
 
 /**
  * The fixed version of the UTF8 encoding function. Some older JVM's UTF8
@@ -43,13 +47,13 @@ public final class MarshallingSupport {
     private MarshallingSupport() {
     }
 
-    public static void marshalPrimitiveMap(Map map, DataByteArrayOutputStream out) throws IOException {
+    public static void marshalPrimitiveMap(Map<String,?> map, DataByteArrayOutputStream out) throws IOException {
         if (map == null) {
             out.writeInt(-1);
         } else {
             out.writeInt(map.size());
-            for (Iterator iter = map.keySet().iterator(); iter.hasNext();) {
-                String name = (String) iter.next();
+            for (Iterator<String> iter = map.keySet().iterator(); iter.hasNext();) {
+                String name = iter.next();
                 out.writeUTF(name);
                 Object value = map.get(name);
                 marshalPrimitive(out, value);
@@ -74,21 +78,20 @@ public final class MarshallingSupport {
         }
         if (size < 0) {
             return null;
-        } else {
-            Map<String, Object> rc = new HashMap<String, Object>(size);
-            for (int i = 0; i < size; i++) {
-                String name = in.readUTF();
-                rc.put(name, unmarshalPrimitive(in));
-            }
-            return rc;
         }
+        Map<String, Object> rc = new HashMap<String, Object>(size);
+        for (int i = 0; i < size; i++) {
+            String name = in.readUTF();
+            rc.put(name, unmarshalPrimitive(in));
+        }
+        return rc;
 
     }
 
-    public static void marshalPrimitiveList(List list, DataByteArrayOutputStream out) throws IOException {
+    public static void marshalPrimitiveList(List<?> list, DataByteArrayOutputStream out) throws IOException {
         out.writeInt(list.size());
-        for (Iterator iter = list.iterator(); iter.hasNext();) {
-            Object element = (Object) iter.next();
+        for (Iterator<?> iter = list.iterator(); iter.hasNext();) {
+            Object element = iter.next();
             marshalPrimitive(out, element);
         }
     }
@@ -102,6 +105,7 @@ public final class MarshallingSupport {
         return answer;
     }
 
+    @SuppressWarnings("unchecked")
     public static void marshalPrimitive(DataByteArrayOutputStream out, Object value) throws IOException {
         if (value == null) {
             marshalNull(out);
@@ -127,10 +131,10 @@ public final class MarshallingSupport {
             marshalString(out, (String) value);
         } else if (value instanceof Map) {
             out.writeByte(MAP_TYPE);
-            marshalPrimitiveMap((Map) value, out);
+            marshalPrimitiveMap((Map<String, ?>) value, out);
         } else if (value instanceof List) {
             out.writeByte(LIST_TYPE);
-            marshalPrimitiveList((List) value, out);
+            marshalPrimitiveList((List<?>) value, out);
         } else {
             throw new IOException("Object is not a primitive: " + value);
         }

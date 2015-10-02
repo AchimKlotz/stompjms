@@ -9,8 +9,6 @@
  */
 package org.fusesource.stomp.jms;
 
-import org.fusesource.stomp.jms.message.StompJmsMessage;
-
 import java.util.LinkedList;
 
 /**

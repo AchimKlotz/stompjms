@@ -23,20 +23,22 @@ public class ClassLoadingAwareObjectInputStream extends ObjectInputStream {
     /**
      * <p>Maps primitive type names to corresponding class objects.</p>
      */
-    private static final HashMap<String, Class> primClasses = new HashMap<String, Class>(8, 1.0F);
+    private static final HashMap<String, Class<?>> primClasses = new HashMap<String, Class<?>>(8, 1.0F);
 
     public ClassLoadingAwareObjectInputStream(InputStream in) throws IOException {
         super(in);
     }
 
-    protected Class resolveClass(ObjectStreamClass classDesc) throws IOException, ClassNotFoundException {
+    @Override
+    protected Class<?> resolveClass(ObjectStreamClass classDesc) throws IOException, ClassNotFoundException {
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
         return load(classDesc.getName(), cl);
     }
 
-    protected Class resolveProxyClass(String[] interfaces) throws IOException, ClassNotFoundException {
+    @Override
+    protected Class<?> resolveProxyClass(String[] interfaces) throws IOException, ClassNotFoundException {
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
-        Class[] cinterfaces = new Class[interfaces.length];
+        Class<?>[] cinterfaces = new Class[interfaces.length];
         for (int i = 0; i < interfaces.length; i++) {
             cinterfaces[i] = load(interfaces[i], cl);
         }
@@ -48,17 +50,16 @@ public class ClassLoadingAwareObjectInputStream extends ObjectInputStream {
         }
     }
 
-    private Class load(String className, ClassLoader cl)
+    private Class<?> load(String className, ClassLoader cl)
             throws ClassNotFoundException {
         try {
             return Class.forName(className, false, cl);
         } catch (ClassNotFoundException e) {
-            final Class clazz = (Class) primClasses.get(className);
+            final Class<?> clazz = primClasses.get(className);
             if (clazz != null) {
                 return clazz;
-            } else {
-                return Class.forName(className, false, FALLBACK_CLASS_LOADER);
             }
+            return Class.forName(className, false, FALLBACK_CLASS_LOADER);
         }
     }
 

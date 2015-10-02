@@ -12,14 +12,12 @@ package org.fusesource.stomp.jms;
 
 import org.fusesource.hawtbuf.AsciiBuffer;
 
-import javax.jms.JMSException;
-
 /**
  * Implementation of a TopicSubscriber
  */
 public class StompJmsDurableTopicSubscriber extends StompJmsTopicSubscriber {
 
-    public StompJmsDurableTopicSubscriber(AsciiBuffer id, StompJmsSession s, StompJmsDestination destination, boolean noLocal, String selector) throws JMSException {
+    public StompJmsDurableTopicSubscriber(AsciiBuffer id, StompJmsSession s, StompJmsDestination destination, boolean noLocal, String selector) {
         super(id, s, destination, noLocal, selector);
     }
 

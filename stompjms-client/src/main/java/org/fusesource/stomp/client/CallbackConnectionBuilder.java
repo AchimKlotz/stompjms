@@ -9,8 +9,6 @@
  */
 package org.fusesource.stomp.client;
 
-import static org.fusesource.hawtdispatch.Dispatch.createQueue;
-
 /**
  * <p>
  * </p>

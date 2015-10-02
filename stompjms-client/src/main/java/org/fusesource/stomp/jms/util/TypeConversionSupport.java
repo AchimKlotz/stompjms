@@ -10,31 +10,33 @@
 
 package org.fusesource.stomp.jms.util;
 
+import java.util.Date;
+import java.util.HashMap;
+
 import org.fusesource.stomp.jms.StompJmsConnection;
 import org.fusesource.stomp.jms.StompJmsDestination;
 import org.fusesource.stomp.jms.StompJmsQueue;
 
-import java.util.Date;
-import java.util.HashMap;
-
 public final class TypeConversionSupport {
 
     static class ConversionKey {
-        final Class from;
-        final Class to;
+        final Class<?> from;
+        final Class<?> to;
         final int hashCode;
 
-        public ConversionKey(Class from, Class to) {
+        public ConversionKey(Class<?> from, Class<?> to) {
             this.from = from;
             this.to = to;
             this.hashCode = from.hashCode() ^ (to.hashCode() << 1);
         }
 
+        @Override
         public boolean equals(Object o) {
             ConversionKey x = (ConversionKey) o;
             return x.from == from && x.to == to;
         }
 
+        @Override
         public int hashCode() {
             return hashCode;
         }
@@ -48,6 +50,7 @@ public final class TypeConversionSupport {
 
     static {
         Converter toStringConverter = new Converter() {
+            @Override
             public Object convert(StompJmsConnection connection, Object value) {
                 return value.toString();
             }
@@ -61,42 +64,50 @@ public final class TypeConversionSupport {
         CONVERSION_MAP.put(new ConversionKey(Double.class, String.class), toStringConverter);
 
         CONVERSION_MAP.put(new ConversionKey(String.class, Boolean.class), new Converter() {
+            @Override
             public Object convert(StompJmsConnection connection, Object value) {
                 return Boolean.valueOf((String) value);
             }
         });
         CONVERSION_MAP.put(new ConversionKey(String.class, Byte.class), new Converter() {
+            @Override
             public Object convert(StompJmsConnection connection, Object value) {
                 return Byte.valueOf((String) value);
             }
         });
         CONVERSION_MAP.put(new ConversionKey(String.class, Short.class), new Converter() {
+            @Override
             public Object convert(StompJmsConnection connection, Object value) {
                 return Short.valueOf((String) value);
             }
         });
         CONVERSION_MAP.put(new ConversionKey(String.class, Integer.class), new Converter() {
+            @Override
             public Object convert(StompJmsConnection connection, Object value) {
                 return Integer.valueOf((String) value);
             }
         });
         CONVERSION_MAP.put(new ConversionKey(String.class, Long.class), new Converter() {
+            @Override
             public Object convert(StompJmsConnection connection, Object value) {
                 return Long.valueOf((String) value);
             }
         });
         CONVERSION_MAP.put(new ConversionKey(String.class, Float.class), new Converter() {
+            @Override
             public Object convert(StompJmsConnection connection, Object value) {
                 return Float.valueOf((String) value);
             }
         });
         CONVERSION_MAP.put(new ConversionKey(String.class, Double.class), new Converter() {
+            @Override
             public Object convert(StompJmsConnection connection, Object value) {
                 return Double.valueOf((String) value);
             }
         });
 
         Converter longConverter = new Converter() {
+            @Override
             public Object convert(StompJmsConnection connection, Object value) {
                 return Long.valueOf(((Number) value).longValue());
             }
@@ -105,12 +116,14 @@ public final class TypeConversionSupport {
         CONVERSION_MAP.put(new ConversionKey(Short.class, Long.class), longConverter);
         CONVERSION_MAP.put(new ConversionKey(Integer.class, Long.class), longConverter);
         CONVERSION_MAP.put(new ConversionKey(Date.class, Long.class), new Converter() {
+            @Override
             public Object convert(StompJmsConnection connection, Object value) {
                 return Long.valueOf(((Date) value).getTime());
             }
         });
 
         Converter intConverter = new Converter() {
+            @Override
             public Object convert(StompJmsConnection connection, Object value) {
                 return Integer.valueOf(((Number) value).intValue());
             }
@@ -119,17 +132,20 @@ public final class TypeConversionSupport {
         CONVERSION_MAP.put(new ConversionKey(Short.class, Integer.class), intConverter);
 
         CONVERSION_MAP.put(new ConversionKey(Byte.class, Short.class), new Converter() {
+            @Override
             public Object convert(StompJmsConnection connection, Object value) {
                 return Short.valueOf(((Number) value).shortValue());
             }
         });
 
         CONVERSION_MAP.put(new ConversionKey(Float.class, Double.class), new Converter() {
+            @Override
             public Object convert(StompJmsConnection connection, Object value) {
                 return new Double(((Number) value).doubleValue());
             }
         });
         CONVERSION_MAP.put(new ConversionKey(String.class, StompJmsDestination.class), new Converter() {
+            @Override
             public Object convert(StompJmsConnection connection, Object value) {
                 return new StompJmsQueue(connection, value.toString());
             }
@@ -139,7 +155,7 @@ public final class TypeConversionSupport {
     private TypeConversionSupport() {
     }
 
-    public static Object convert(StompJmsConnection connection, Object value, Class clazz) {
+    public static Object convert(StompJmsConnection connection, Object value, Class<?> clazz) {
 
         assert value != null && clazz != null;
 

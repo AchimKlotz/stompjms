@@ -10,16 +10,21 @@
 
 package org.fusesource.stomp.jms.message;
 
-import org.fusesource.hawtbuf.Buffer;
-import org.fusesource.hawtbuf.ByteArrayInputStream;
-import org.fusesource.hawtbuf.DataByteArrayInputStream;
-import org.fusesource.hawtbuf.DataByteArrayOutputStream;
-import org.fusesource.stomp.jms.StompJmsExceptionSupport;
-
-import javax.jms.*;
 import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.IOException;
+
+import javax.jms.BytesMessage;
+import javax.jms.JMSException;
+import javax.jms.MessageEOFException;
+import javax.jms.MessageFormatException;
+import javax.jms.MessageNotReadableException;
+import javax.jms.MessageNotWriteableException;
+
+import org.fusesource.hawtbuf.Buffer;
+import org.fusesource.hawtbuf.ByteArrayInputStream;
+import org.fusesource.hawtbuf.DataByteArrayOutputStream;
+import org.fusesource.stomp.jms.StompJmsExceptionSupport;
 
 
 /**
@@ -78,10 +83,12 @@ public class StompJmsBytesMessage extends StompJmsMessage implements BytesMessag
     protected transient DataInputStream dataIn;
     protected transient int length;
 
+    @Override
     public JmsMsgType getMsgType() {
         return JmsMsgType.BYTES;
     }
 
+    @Override
     public StompJmsMessage copy() throws JMSException {
         StompJmsBytesMessage other = new StompJmsBytesMessage();
         other.copy(this);
@@ -96,6 +103,7 @@ public class StompJmsBytesMessage extends StompJmsMessage implements BytesMessag
     }
 
 
+    @Override
     public void storeContent() throws JMSException {
         try {
             if (bytesOut != null) {
@@ -120,6 +128,7 @@ public class StompJmsBytesMessage extends StompJmsMessage implements BytesMessag
      * @throws JMSException if the JMS provider fails to clear the message body
      *                      due to some internal error.
      */
+    @Override
     public void clearBody() throws JMSException {
         super.clearBody();
         this.dataIn = null;
@@ -139,6 +148,7 @@ public class StompJmsBytesMessage extends StompJmsMessage implements BytesMessag
      * @since 1.1
      */
 
+    @Override
     public long getBodyLength() throws JMSException {
         initializeReading();
         return length;
@@ -152,6 +162,7 @@ public class StompJmsBytesMessage extends StompJmsMessage implements BytesMessag
      *                                     some internal error.
      * @throws MessageNotReadableException if the message is in write-only mode.
      */
+    @Override
     public boolean readBoolean() throws JMSException {
         initializeReading();
         try {
@@ -172,6 +183,7 @@ public class StompJmsBytesMessage extends StompJmsMessage implements BytesMessag
      *                                     some internal error.
      * @throws MessageNotReadableException if the message is in write-only mode.
      */
+    @Override
     public byte readByte() throws JMSException {
         initializeReading();
         try {
@@ -194,6 +206,7 @@ public class StompJmsBytesMessage extends StompJmsMessage implements BytesMessag
      *                                       reached.
      * @throws MessageNotReadableException   if the message is in write-only mode.
      */
+    @Override
     public int readUnsignedByte() throws JMSException {
         initializeReading();
         try {
@@ -216,6 +229,7 @@ public class StompJmsBytesMessage extends StompJmsMessage implements BytesMessag
      *                                     reached.
      * @throws MessageNotReadableException if the message is in write-only mode.
      */
+    @Override
     public short readShort() throws JMSException {
         initializeReading();
         try {
@@ -238,6 +252,7 @@ public class StompJmsBytesMessage extends StompJmsMessage implements BytesMessag
      *                                     reached.
      * @throws MessageNotReadableException if the message is in write-only mode.
      */
+    @Override
     public int readUnsignedShort() throws JMSException {
         initializeReading();
         try {
@@ -260,6 +275,7 @@ public class StompJmsBytesMessage extends StompJmsMessage implements BytesMessag
      *                                     reached.
      * @throws MessageNotReadableException if the message is in write-only mode.
      */
+    @Override
     public char readChar() throws JMSException {
         initializeReading();
         try {
@@ -282,6 +298,7 @@ public class StompJmsBytesMessage extends StompJmsMessage implements BytesMessag
      *                                     reached.
      * @throws MessageNotReadableException if the message is in write-only mode.
      */
+    @Override
     public int readInt() throws JMSException {
         initializeReading();
         try {
@@ -304,6 +321,7 @@ public class StompJmsBytesMessage extends StompJmsMessage implements BytesMessag
      *                                     reached.
      * @throws MessageNotReadableException if the message is in write-only mode.
      */
+    @Override
     public long readLong() throws JMSException {
         initializeReading();
         try {
@@ -326,6 +344,7 @@ public class StompJmsBytesMessage extends StompJmsMessage implements BytesMessag
      *                                     reached.
      * @throws MessageNotReadableException if the message is in write-only mode.
      */
+    @Override
     public float readFloat() throws JMSException {
         initializeReading();
         try {
@@ -348,6 +367,7 @@ public class StompJmsBytesMessage extends StompJmsMessage implements BytesMessag
      *                                     reached.
      * @throws MessageNotReadableException if the message is in write-only mode.
      */
+    @Override
     public double readDouble() throws JMSException {
         initializeReading();
         try {
@@ -375,6 +395,7 @@ public class StompJmsBytesMessage extends StompJmsMessage implements BytesMessag
      *                                     reached.
      * @throws MessageNotReadableException if the message is in write-only mode.
      */
+    @Override
     public String readUTF() throws JMSException {
         initializeReading();
         try {
@@ -406,6 +427,7 @@ public class StompJmsBytesMessage extends StompJmsMessage implements BytesMessag
      *                                     some internal error.
      * @throws MessageNotReadableException if the message is in write-only mode.
      */
+    @Override
     public int readBytes(byte[] value) throws JMSException {
         return readBytes(value, value.length);
     }
@@ -436,6 +458,7 @@ public class StompJmsBytesMessage extends StompJmsMessage implements BytesMessag
      *                                     some internal error.
      * @throws MessageNotReadableException if the message is in write-only mode.
      */
+    @Override
     public int readBytes(byte[] value, int length) throws JMSException {
         initializeReading();
         try {
@@ -469,6 +492,7 @@ public class StompJmsBytesMessage extends StompJmsMessage implements BytesMessag
      *                                      to some internal error.
      * @throws MessageNotWriteableException if the message is in read-only mode.
      */
+    @Override
     public void writeBoolean(boolean value) throws JMSException {
         initializeWriting();
         try {
@@ -487,6 +511,7 @@ public class StompJmsBytesMessage extends StompJmsMessage implements BytesMessag
      *                                      to some internal error.
      * @throws MessageNotWriteableException if the message is in read-only mode.
      */
+    @Override
     public void writeByte(byte value) throws JMSException {
         initializeWriting();
         try {
@@ -505,6 +530,7 @@ public class StompJmsBytesMessage extends StompJmsMessage implements BytesMessag
      *                                      to some internal error.
      * @throws MessageNotWriteableException if the message is in read-only mode.
      */
+    @Override
     public void writeShort(short value) throws JMSException {
         initializeWriting();
         try {
@@ -523,6 +549,7 @@ public class StompJmsBytesMessage extends StompJmsMessage implements BytesMessag
      *                                      to some internal error.
      * @throws MessageNotWriteableException if the message is in read-only mode.
      */
+    @Override
     public void writeChar(char value) throws JMSException {
         initializeWriting();
         try {
@@ -541,6 +568,7 @@ public class StompJmsBytesMessage extends StompJmsMessage implements BytesMessag
      *                                      to some internal error.
      * @throws MessageNotWriteableException if the message is in read-only mode.
      */
+    @Override
     public void writeInt(int value) throws JMSException {
         initializeWriting();
         try {
@@ -559,6 +587,7 @@ public class StompJmsBytesMessage extends StompJmsMessage implements BytesMessag
      *                                      to some internal error.
      * @throws MessageNotWriteableException if the message is in read-only mode.
      */
+    @Override
     public void writeLong(long value) throws JMSException {
         initializeWriting();
         try {
@@ -579,6 +608,7 @@ public class StompJmsBytesMessage extends StompJmsMessage implements BytesMessag
      *                                      to some internal error.
      * @throws MessageNotWriteableException if the message is in read-only mode.
      */
+    @Override
     public void writeFloat(float value) throws JMSException {
         initializeWriting();
         try {
@@ -599,6 +629,7 @@ public class StompJmsBytesMessage extends StompJmsMessage implements BytesMessag
      *                                      to some internal error.
      * @throws MessageNotWriteableException if the message is in read-only mode.
      */
+    @Override
     public void writeDouble(double value) throws JMSException {
         initializeWriting();
         try {
@@ -622,6 +653,7 @@ public class StompJmsBytesMessage extends StompJmsMessage implements BytesMessag
      *                                      to some internal error.
      * @throws MessageNotWriteableException if the message is in read-only mode.
      */
+    @Override
     public void writeUTF(String value) throws JMSException {
         initializeWriting();
         try {
@@ -639,6 +671,7 @@ public class StompJmsBytesMessage extends StompJmsMessage implements BytesMessag
      *                                      to some internal error.
      * @throws MessageNotWriteableException if the message is in read-only mode.
      */
+    @Override
     public void writeBytes(byte[] value) throws JMSException {
         initializeWriting();
         try {
@@ -658,6 +691,7 @@ public class StompJmsBytesMessage extends StompJmsMessage implements BytesMessag
      *                                      to some internal error.
      * @throws MessageNotWriteableException if the message is in read-only mode.
      */
+    @Override
     public void writeBytes(byte[] value, int offset, int length) throws JMSException {
         initializeWriting();
         try {
@@ -683,6 +717,7 @@ public class StompJmsBytesMessage extends StompJmsMessage implements BytesMessag
      * @throws java.lang.NullPointerException if the parameter
      *                                        <code>value</code> is null.
      */
+    @Override
     public void writeObject(Object value) throws JMSException {
         if (value == null) {
             throw new NullPointerException();
@@ -719,6 +754,7 @@ public class StompJmsBytesMessage extends StompJmsMessage implements BytesMessag
      *
      * @throws JMSException if an internal error occurs
      */
+    @Override
     public void reset() throws JMSException {
         storeContent();
         this.bytesOut = null;
@@ -751,11 +787,13 @@ public class StompJmsBytesMessage extends StompJmsMessage implements BytesMessag
         }
     }
 
+    @Override
     public void setObjectProperty(String name, Object value) throws JMSException {
         initializeWriting();
         super.setObjectProperty(name, value);
     }
 
+    @Override
     public String toString() {
         return super.toString() + " StompJmsBytesMessage{ " + "bytesOut = " + bytesOut + ", dataIn = " + dataIn + " }";
     }

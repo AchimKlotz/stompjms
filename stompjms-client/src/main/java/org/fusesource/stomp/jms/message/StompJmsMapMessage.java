@@ -10,18 +10,19 @@
 
 package org.fusesource.stomp.jms.message;
 
-import org.fusesource.hawtbuf.Buffer;
-import org.fusesource.stomp.jms.util.StompTranslator;
-
-import javax.jms.JMSException;
-import javax.jms.MapMessage;
-import javax.jms.MessageFormatException;
-import javax.jms.MessageNotWriteableException;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+
+import javax.jms.JMSException;
+import javax.jms.MapMessage;
+import javax.jms.MessageFormatException;
+import javax.jms.MessageNotWriteableException;
+
+import org.fusesource.hawtbuf.Buffer;
+import org.fusesource.stomp.jms.util.StompTranslator;
 
 
 /**
@@ -82,10 +83,12 @@ public class StompJmsMapMessage extends StompJmsMessage implements MapMessage {
 
     protected transient Map<String, Object> map = new HashMap<String, Object>();
 
+    @Override
     public JmsMsgType getMsgType() {
         return JmsMsgType.MAP;
     }
 
+    @Override
     public StompJmsMessage copy() throws JMSException {
         StompJmsMapMessage other = new StompJmsMapMessage();
         other.copy(this);
@@ -98,6 +101,7 @@ public class StompJmsMapMessage extends StompJmsMessage implements MapMessage {
     }
 
 
+    @Override
     public void storeContent() throws JMSException {
         Buffer buffer = getContent();
         if (buffer == null && !this.map.isEmpty()) {
@@ -112,6 +116,7 @@ public class StompJmsMapMessage extends StompJmsMessage implements MapMessage {
      * @throws JMSException
      * @throws IOException
      */
+    @SuppressWarnings("unchecked")
     private void loadContent() throws JMSException {
         Buffer buffer = getContent();
         if (buffer != null && this.map.isEmpty()) {
@@ -127,6 +132,7 @@ public class StompJmsMapMessage extends StompJmsMessage implements MapMessage {
      * message body in the same state as an empty body in a newly created
      * message.
      */
+    @Override
     public void clearBody() throws JMSException {
         super.clearBody();
         map.clear();
@@ -141,6 +147,7 @@ public class StompJmsMapMessage extends StompJmsMessage implements MapMessage {
      *                                some internal error.
      * @throws MessageFormatException if this type conversion is invalid.
      */
+    @Override
     public boolean getBoolean(String name) throws JMSException {
         initializeReading();
         Object value = map.get(name);
@@ -152,9 +159,8 @@ public class StompJmsMapMessage extends StompJmsMessage implements MapMessage {
         }
         if (value instanceof String) {
             return Boolean.valueOf(value.toString()).booleanValue();
-        } else {
-            throw new MessageFormatException(" cannot read a boolean from " + value.getClass().getName());
         }
+        throw new MessageFormatException(" cannot read a boolean from " + value.getClass().getName());
     }
 
     /**
@@ -166,6 +172,7 @@ public class StompJmsMapMessage extends StompJmsMessage implements MapMessage {
      *                                some internal error.
      * @throws MessageFormatException if this type conversion is invalid.
      */
+    @Override
     public byte getByte(String name) throws JMSException {
         initializeReading();
         Object value = map.get(name);
@@ -177,9 +184,8 @@ public class StompJmsMapMessage extends StompJmsMessage implements MapMessage {
         }
         if (value instanceof String) {
             return Byte.valueOf(value.toString()).byteValue();
-        } else {
-            throw new MessageFormatException(" cannot read a byte from " + value.getClass().getName());
         }
+        throw new MessageFormatException(" cannot read a byte from " + value.getClass().getName());
     }
 
     /**
@@ -191,6 +197,7 @@ public class StompJmsMapMessage extends StompJmsMessage implements MapMessage {
      *                                some internal error.
      * @throws MessageFormatException if this type conversion is invalid.
      */
+    @Override
     public short getShort(String name) throws JMSException {
         initializeReading();
         Object value = map.get(name);
@@ -205,9 +212,8 @@ public class StompJmsMapMessage extends StompJmsMessage implements MapMessage {
         }
         if (value instanceof String) {
             return Short.valueOf(value.toString()).shortValue();
-        } else {
-            throw new MessageFormatException(" cannot read a short from " + value.getClass().getName());
         }
+        throw new MessageFormatException(" cannot read a short from " + value.getClass().getName());
     }
 
     /**
@@ -219,6 +225,7 @@ public class StompJmsMapMessage extends StompJmsMessage implements MapMessage {
      *                                some internal error.
      * @throws MessageFormatException if this type conversion is invalid.
      */
+    @Override
     public char getChar(String name) throws JMSException {
         initializeReading();
         Object value = map.get(name);
@@ -227,9 +234,8 @@ public class StompJmsMapMessage extends StompJmsMessage implements MapMessage {
         }
         if (value instanceof Character) {
             return ((Character) value).charValue();
-        } else {
-            throw new MessageFormatException(" cannot read a short from " + value.getClass().getName());
         }
+        throw new MessageFormatException(" cannot read a short from " + value.getClass().getName());
     }
 
     /**
@@ -241,6 +247,7 @@ public class StompJmsMapMessage extends StompJmsMessage implements MapMessage {
      *                                some internal error.
      * @throws MessageFormatException if this type conversion is invalid.
      */
+    @Override
     public int getInt(String name) throws JMSException {
         initializeReading();
         Object value = map.get(name);
@@ -258,9 +265,8 @@ public class StompJmsMapMessage extends StompJmsMessage implements MapMessage {
         }
         if (value instanceof String) {
             return Integer.valueOf(value.toString()).intValue();
-        } else {
-            throw new MessageFormatException(" cannot read an int from " + value.getClass().getName());
         }
+        throw new MessageFormatException(" cannot read an int from " + value.getClass().getName());
     }
 
     /**
@@ -272,6 +278,7 @@ public class StompJmsMapMessage extends StompJmsMessage implements MapMessage {
      *                                some internal error.
      * @throws MessageFormatException if this type conversion is invalid.
      */
+    @Override
     public long getLong(String name) throws JMSException {
         initializeReading();
         Object value = map.get(name);
@@ -292,9 +299,8 @@ public class StompJmsMapMessage extends StompJmsMessage implements MapMessage {
         }
         if (value instanceof String) {
             return Long.valueOf(value.toString()).longValue();
-        } else {
-            throw new MessageFormatException(" cannot read a long from " + value.getClass().getName());
         }
+        throw new MessageFormatException(" cannot read a long from " + value.getClass().getName());
     }
 
     /**
@@ -306,6 +312,7 @@ public class StompJmsMapMessage extends StompJmsMessage implements MapMessage {
      *                                some internal error.
      * @throws MessageFormatException if this type conversion is invalid.
      */
+    @Override
     public float getFloat(String name) throws JMSException {
         initializeReading();
         Object value = map.get(name);
@@ -317,9 +324,8 @@ public class StompJmsMapMessage extends StompJmsMessage implements MapMessage {
         }
         if (value instanceof String) {
             return Float.valueOf(value.toString()).floatValue();
-        } else {
-            throw new MessageFormatException(" cannot read a float from " + value.getClass().getName());
         }
+        throw new MessageFormatException(" cannot read a float from " + value.getClass().getName());
     }
 
     /**
@@ -331,6 +337,7 @@ public class StompJmsMapMessage extends StompJmsMessage implements MapMessage {
      *                                some internal error.
      * @throws MessageFormatException if this type conversion is invalid.
      */
+    @Override
     public double getDouble(String name) throws JMSException {
         initializeReading();
         Object value = map.get(name);
@@ -345,9 +352,8 @@ public class StompJmsMapMessage extends StompJmsMessage implements MapMessage {
         }
         if (value instanceof String) {
             return Float.valueOf(value.toString()).floatValue();
-        } else {
-            throw new MessageFormatException(" cannot read a double from " + value.getClass().getName());
         }
+        throw new MessageFormatException(" cannot read a double from " + value.getClass().getName());
     }
 
     /**
@@ -360,6 +366,7 @@ public class StompJmsMapMessage extends StompJmsMessage implements MapMessage {
      *                                some internal error.
      * @throws MessageFormatException if this type conversion is invalid.
      */
+    @Override
     public String getString(String name) throws JMSException {
         initializeReading();
         Object value = map.get(name);
@@ -368,9 +375,8 @@ public class StompJmsMapMessage extends StompJmsMessage implements MapMessage {
         }
         if (value instanceof byte[]) {
             throw new MessageFormatException("Use getBytes to read a byte array");
-        } else {
-            return value.toString();
         }
+        return value.toString();
     }
 
     /**
@@ -383,14 +389,14 @@ public class StompJmsMapMessage extends StompJmsMessage implements MapMessage {
      *                                some internal error.
      * @throws MessageFormatException if this type conversion is invalid.
      */
+    @Override
     public byte[] getBytes(String name) throws JMSException {
         initializeReading();
         Object value = map.get(name);
         if (value instanceof byte[]) {
             return (byte[]) value;
-        } else {
-            throw new MessageFormatException(" cannot read a byte[] from " + value.getClass().getName());
         }
+        throw new MessageFormatException(" cannot read a byte[] from " + value.getClass().getName());
     }
 
     /**
@@ -412,6 +418,7 @@ public class StompJmsMapMessage extends StompJmsMessage implements MapMessage {
      * @throws JMSException if the JMS provider fails to read the message due to
      *                      some internal error.
      */
+    @Override
     public Object getObject(String name) throws JMSException {
         initializeReading();
         return map.get(name);
@@ -424,12 +431,13 @@ public class StompJmsMapMessage extends StompJmsMessage implements MapMessage {
      * @return an enumeration of all the names in this <CODE>MapMessage</CODE>
      * @throws JMSException
      */
+    @Override
     public Enumeration<String> getMapNames() throws JMSException {
         initializeReading();
         return Collections.enumeration(map.keySet());
     }
 
-    protected void put(String name, Object value) throws JMSException {
+    protected void put(String name, Object value) {
         if (name == null) {
             throw new IllegalArgumentException("The name of the property cannot be null.");
         }
@@ -450,6 +458,7 @@ public class StompJmsMapMessage extends StompJmsMessage implements MapMessage {
      *                                      empty string.
      * @throws MessageNotWriteableException if the message is in read-only mode.
      */
+    @Override
     public void setBoolean(String name, boolean value) throws JMSException {
         initializeWriting();
         put(name, value ? Boolean.TRUE : Boolean.FALSE);
@@ -466,6 +475,7 @@ public class StompJmsMapMessage extends StompJmsMessage implements MapMessage {
      *                                      empty string.
      * @throws MessageNotWriteableException if the message is in read-only mode.
      */
+    @Override
     public void setByte(String name, byte value) throws JMSException {
         initializeWriting();
         put(name, Byte.valueOf(value));
@@ -482,6 +492,7 @@ public class StompJmsMapMessage extends StompJmsMessage implements MapMessage {
      *                                      empty string.
      * @throws MessageNotWriteableException if the message is in read-only mode.
      */
+    @Override
     public void setShort(String name, short value) throws JMSException {
         initializeWriting();
         put(name, Short.valueOf(value));
@@ -498,6 +509,7 @@ public class StompJmsMapMessage extends StompJmsMessage implements MapMessage {
      *                                      empty string.
      * @throws MessageNotWriteableException if the message is in read-only mode.
      */
+    @Override
     public void setChar(String name, char value) throws JMSException {
         initializeWriting();
         put(name, Character.valueOf(value));
@@ -514,6 +526,7 @@ public class StompJmsMapMessage extends StompJmsMessage implements MapMessage {
      *                                      empty string.
      * @throws MessageNotWriteableException if the message is in read-only mode.
      */
+    @Override
     public void setInt(String name, int value) throws JMSException {
         initializeWriting();
         put(name, Integer.valueOf(value));
@@ -530,6 +543,7 @@ public class StompJmsMapMessage extends StompJmsMessage implements MapMessage {
      *                                      empty string.
      * @throws MessageNotWriteableException if the message is in read-only mode.
      */
+    @Override
     public void setLong(String name, long value) throws JMSException {
         initializeWriting();
         put(name, Long.valueOf(value));
@@ -546,6 +560,7 @@ public class StompJmsMapMessage extends StompJmsMessage implements MapMessage {
      *                                      empty string.
      * @throws MessageNotWriteableException if the message is in read-only mode.
      */
+    @Override
     public void setFloat(String name, float value) throws JMSException {
         initializeWriting();
         put(name, new Float(value));
@@ -562,6 +577,7 @@ public class StompJmsMapMessage extends StompJmsMessage implements MapMessage {
      *                                      empty string.
      * @throws MessageNotWriteableException if the message is in read-only mode.
      */
+    @Override
     public void setDouble(String name, double value) throws JMSException {
         initializeWriting();
         put(name, new Double(value));
@@ -578,6 +594,7 @@ public class StompJmsMapMessage extends StompJmsMessage implements MapMessage {
      *                                      empty string.
      * @throws MessageNotWriteableException if the message is in read-only mode.
      */
+    @Override
     public void setString(String name, String value) throws JMSException {
         initializeWriting();
         put(name, value);
@@ -596,6 +613,7 @@ public class StompJmsMapMessage extends StompJmsMessage implements MapMessage {
      *                                      empty string.
      * @throws MessageNotWriteableException if the message is in read-only mode.
      */
+    @Override
     public void setBytes(String name, byte[] value) throws JMSException {
         initializeWriting();
         if (value != null) {
@@ -619,6 +637,7 @@ public class StompJmsMapMessage extends StompJmsMessage implements MapMessage {
      *                                      empty string.
      * @throws MessageNotWriteableException if the message is in read-only mode.
      */
+    @Override
     public void setBytes(String name, byte[] value, int offset, int length) throws JMSException {
         initializeWriting();
         byte[] data = new byte[length];
@@ -642,6 +661,7 @@ public class StompJmsMapMessage extends StompJmsMessage implements MapMessage {
      * @throws MessageFormatException       if the object is invalid.
      * @throws MessageNotWriteableException if the message is in read-only mode.
      */
+    @Override
     public void setObject(String name, Object value) throws JMSException {
         initializeWriting();
         if (value != null) {
@@ -664,6 +684,7 @@ public class StompJmsMapMessage extends StompJmsMessage implements MapMessage {
      * @throws JMSException if the JMS provider fails to determine if the item
      *                      exists due to some internal error.
      */
+    @Override
     public boolean itemExists(String name) throws JMSException {
         initializeReading();
         return map.containsKey(name);
@@ -678,6 +699,7 @@ public class StompJmsMapMessage extends StompJmsMessage implements MapMessage {
         setContent(null);
     }
 
+    @Override
     public String toString() {
         return super.toString() + " ActiveMQMapMessage{ " + "theTable = " + map + " }";
     }

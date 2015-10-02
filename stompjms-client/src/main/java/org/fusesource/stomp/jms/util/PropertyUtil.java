@@ -10,8 +10,11 @@
 
 package org.fusesource.stomp.jms.util;
 
-import javax.net.ssl.SSLContext;
-import java.beans.*;
+import java.beans.BeanInfo;
+import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
+import java.beans.PropertyEditor;
+import java.beans.PropertyEditorManager;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URL;
@@ -20,6 +23,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import javax.net.ssl.SSLContext;
 
 /**
  * Utilities for properties
@@ -32,6 +37,7 @@ public class PropertyUtil {
      * @return <Code>Map</Code> of properties
      * @throws Exception
      */
+    @SuppressWarnings("unchecked")
     public static Map<String, String> parseParameters(URI uri) throws Exception {
         return uri.getQuery() == null ? Collections.EMPTY_MAP : parseQuery(stripPrefix(uri.getQuery(), "?"));
     }
@@ -43,6 +49,7 @@ public class PropertyUtil {
      * @return <Code>Map</Code> of properties
      * @throws Exception
      */
+    @SuppressWarnings("unchecked")
     public static Map<String, String> parseParameters(String uri) throws Exception {
         return uri == null ? Collections.EMPTY_MAP : parseQuery(stripUpto(uri, '?'));
     }
@@ -72,7 +79,7 @@ public class PropertyUtil {
             }
             return rc;
         }
-        return Collections.EMPTY_MAP;
+        return Collections.emptyMap();
     }
 
     /**
@@ -134,7 +141,7 @@ public class PropertyUtil {
             throw new IllegalArgumentException("props was null.");
         }
         for (Map.Entry<String, String> entry : props.entrySet()) {
-            if (setProperty(target, (String) entry.getKey(), entry.getValue())) {
+            if (setProperty(target, entry.getKey(), entry.getValue())) {
             }
         }
     }

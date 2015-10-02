@@ -10,11 +10,6 @@
 
 package org.fusesource.stomp.jms;
 
-import junit.framework.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.jms.*;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -22,6 +17,23 @@ import java.util.HashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.jms.BytesMessage;
+import javax.jms.DeliveryMode;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageListener;
+import javax.jms.MessageProducer;
+import javax.jms.ObjectMessage;
+import javax.jms.Queue;
+import javax.jms.QueueBrowser;
+import javax.jms.Session;
+import javax.jms.TextMessage;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import junit.framework.Test;
 
 
 /**
@@ -286,6 +298,7 @@ public class JMSConsumerTest extends JmsTestSupport {
         destination = createDestination(destinationType);
         StompJmsMessageConsumer consumer = (StompJmsMessageConsumer) session.createConsumer(destination);
         consumer.setMessageListener(new MessageListener() {
+            @Override
             public void onMessage(Message m) {
                 counter.incrementAndGet();
                 if (counter.get() == 1) {
@@ -338,6 +351,7 @@ public class JMSConsumerTest extends JmsTestSupport {
 
         // See if the message get sent to the listener
         consumer.setMessageListener(new MessageListener() {
+            @Override
             public void onMessage(Message m) {
                 counter.incrementAndGet();
                 if (counter.get() == 4) {
@@ -373,6 +387,7 @@ public class JMSConsumerTest extends JmsTestSupport {
         destination = createDestination(destinationType);
         MessageConsumer consumer = session.createConsumer(destination);
         consumer.setMessageListener(new MessageListener() {
+            @Override
             public void onMessage(Message m) {
                 counter.incrementAndGet();
                 if (counter.get() == 4) {
@@ -405,7 +420,7 @@ public class JMSConsumerTest extends JmsTestSupport {
         headers.put("from-seq", "0");
 
         // This should act like a browsing subscription..
-        ((StompJmsDestination) destination).setSubscribeHeaders(headers);
+        destination.setSubscribeHeaders(headers);
         MessageConsumer consumer = session.createConsumer(destination);
 
         // Send the messages

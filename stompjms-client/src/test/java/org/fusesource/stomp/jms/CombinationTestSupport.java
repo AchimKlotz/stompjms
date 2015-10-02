@@ -10,15 +10,24 @@
 
 package org.fusesource.stomp.jms;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import junit.framework.Test;
+import junit.framework.TestSuite;
 
 /**
  * Poor mans way of getting JUnit to run a test case through a few different
@@ -70,6 +79,7 @@ public abstract class CombinationTestSupport extends AutoFailTestSupport {
         }
     }
 
+    @Override
     public void runBare() throws Throwable {
         if (combosEvaluated) {
             super.runBare();
@@ -84,7 +94,7 @@ public abstract class CombinationTestSupport extends AutoFailTestSupport {
         }
     }
 
-    private void setOptions(Map<String, Object> options) throws NoSuchFieldException, IllegalAccessException {
+    private void setOptions(Map<String, Object> options) {
         this.options = options;
         for (String attribute : options.keySet()) {
             Object value = options.get(attribute);
@@ -119,21 +129,19 @@ public abstract class CombinationTestSupport extends AutoFailTestSupport {
             if (expandedOptions.isEmpty()) {
                 combosEvaluated = true;
                 return new CombinationTestSupport[]{this};
-            } else {
-
-                ArrayList<CombinationTestSupport> result = new ArrayList<CombinationTestSupport>();
-                // Run the test case for each possible combination
-                for (Iterator<HashMap<String, Object>> iter = expandedOptions.iterator(); iter.hasNext();) {
-                    CombinationTestSupport combo = (CombinationTestSupport) TestSuite.createTest(getClass(), name);
-                    combo.combosEvaluated = true;
-                    combo.setOptions(iter.next());
-                    result.add(combo);
-                }
-
-                CombinationTestSupport rc[] = new CombinationTestSupport[result.size()];
-                result.toArray(rc);
-                return rc;
             }
+            ArrayList<CombinationTestSupport> result = new ArrayList<CombinationTestSupport>();
+            // Run the test case for each possible combination
+            for (Iterator<HashMap<String, Object>> iter = expandedOptions.iterator(); iter.hasNext();) {
+                CombinationTestSupport combo = (CombinationTestSupport) TestSuite.createTest(getClass(), name);
+                combo.combosEvaluated = true;
+                combo.setOptions(iter.next());
+                result.add(combo);
+            }
+
+            CombinationTestSupport rc[] = new CombinationTestSupport[result.size()];
+            result.toArray(rc);
+            return rc;
         } catch (Throwable e) {
             combosEvaluated = true;
             return new CombinationTestSupport[]{this};
@@ -201,6 +209,7 @@ public abstract class CombinationTestSupport extends AutoFailTestSupport {
         return parameters.length == 0 && name.startsWith("test") && returnType.equals(Void.TYPE);
     }
 
+    @Override
     public String getName() {
         return getName(false);
     }

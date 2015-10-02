@@ -10,24 +10,53 @@
 
 package org.fusesource.stomp.jms.message;
 
+import static org.fusesource.hawtbuf.Buffer.ascii;
+import static org.fusesource.stomp.client.Constants.CONTENT_LENGTH;
+import static org.fusesource.stomp.client.Constants.CORRELATION_ID;
+import static org.fusesource.stomp.client.Constants.DESTINATION;
+import static org.fusesource.stomp.client.Constants.EXPIRATION_TIME;
+import static org.fusesource.stomp.client.Constants.FALSE;
+import static org.fusesource.stomp.client.Constants.JMSX_DELIVERY_COUNT;
+import static org.fusesource.stomp.client.Constants.MESSAGE;
+import static org.fusesource.stomp.client.Constants.MESSAGE_ID;
+import static org.fusesource.stomp.client.Constants.PERSISTENT;
+import static org.fusesource.stomp.client.Constants.PRIORITY;
+import static org.fusesource.stomp.client.Constants.RECEIPT_REQUESTED;
+import static org.fusesource.stomp.client.Constants.REDELIVERED;
+import static org.fusesource.stomp.client.Constants.REPLY_TO;
+import static org.fusesource.stomp.client.Constants.SUBSCRIPTION;
+import static org.fusesource.stomp.client.Constants.TIMESTAMP;
+import static org.fusesource.stomp.client.Constants.TRANSFORMATION;
+import static org.fusesource.stomp.client.Constants.TRUE;
+import static org.fusesource.stomp.client.Constants.TYPE;
+import static org.fusesource.stomp.codec.StompFrame.NO_DATA;
+import static org.fusesource.stomp.codec.StompFrame.decodeHeader;
+import static org.fusesource.stomp.codec.StompFrame.encodeHeader;
+
+import java.io.UnsupportedEncodingException;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Vector;
+import java.util.concurrent.Callable;
+
+import javax.jms.DeliveryMode;
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.MessageFormatException;
+import javax.jms.MessageNotWriteableException;
+
 import org.fusesource.hawtbuf.AsciiBuffer;
 import org.fusesource.hawtbuf.Buffer;
+import org.fusesource.stomp.codec.StompFrame;
 import org.fusesource.stomp.jms.StompJmsConnection;
 import org.fusesource.stomp.jms.StompJmsDestination;
 import org.fusesource.stomp.jms.StompJmsExceptionSupport;
-import org.fusesource.stomp.codec.StompFrame;
-import org.fusesource.stomp.jms.util.TypeConversionSupport;
 import org.fusesource.stomp.jms.util.PropertyExpression;
-
-import javax.jms.*;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.util.*;
-import java.util.concurrent.Callable;
-
-import static org.fusesource.hawtbuf.Buffer.ascii;
-import static org.fusesource.stomp.client.Constants.*;
-import static org.fusesource.stomp.codec.StompFrame.*;
+import org.fusesource.stomp.jms.util.TypeConversionSupport;
 
 public class StompJmsMessage implements javax.jms.Message {
 
@@ -88,6 +117,9 @@ public class StompJmsMessage implements javax.jms.Message {
         getHeaderMap().put(TRANSFORMATION, getMsgType().buffer);
     }
 
+    /**
+     * @throws JMSException in child implementations
+     */
     public StompJmsMessage copy() throws JMSException {
         StompJmsMessage other = new StompJmsMessage();
         other.copy(this);
@@ -125,9 +157,8 @@ public class StompJmsMessage implements javax.jms.Message {
         String id = getJMSMessageID();
         if (id != null) {
             return id.hashCode();
-        } else {
-            return super.hashCode();
         }
+        return super.hashCode();
     }
 
     @Override
@@ -145,6 +176,7 @@ public class StompJmsMessage implements javax.jms.Message {
         return thisMsg != null && oMsg != null && oMsg.equals(thisMsg);
     }
 
+    @Override
     public void acknowledge() throws JMSException {
         if (acknowledgeCallback != null) {
             try {
@@ -159,9 +191,8 @@ public class StompJmsMessage implements javax.jms.Message {
         Buffer content = this.frame.content();
         if( content.isEmpty() ) {
             return null;
-        } else {
-            return content;
         }
+        return content;
     }
 
     public void setContent(Buffer content) {
@@ -172,6 +203,7 @@ public class StompJmsMessage implements javax.jms.Message {
         }
     }
 
+    @Override
     public void clearBody() throws JMSException {
         if (this.frame != null) {
             this.frame.content(StompFrame.NO_DATA);
@@ -192,9 +224,8 @@ public class StompJmsMessage implements javax.jms.Message {
         AsciiBuffer buffer = getHeaderMap().get(key);
         if( buffer == null ) {
             return null;
-        } else {
-            return buffer.toString();
         }
+        return buffer.toString();
     }
     private void setStringHeader(AsciiBuffer key, String value) {
         if(value==null) {
@@ -208,9 +239,8 @@ public class StompJmsMessage implements javax.jms.Message {
         AsciiBuffer buffer = getHeaderMap().get(key);
         if( buffer == null ) {
             return null;
-        } else {
-            return buffer.deepCopy().data;
         }
+        return buffer.deepCopy().data;
     }
     private void setBytesHeader(AsciiBuffer key, byte[]  value) {
         if(value==null) {
@@ -224,9 +254,8 @@ public class StompJmsMessage implements javax.jms.Message {
         AsciiBuffer buffer = getHeaderMap().get(key);
         if( buffer == null ) {
             return null;
-        } else {
-            return Integer.parseInt(buffer.toString());
         }
+        return Integer.parseInt(buffer.toString());
     }
     private void setIntegerHeader(AsciiBuffer key, Integer value) {
         if(value==null) {
@@ -240,9 +269,8 @@ public class StompJmsMessage implements javax.jms.Message {
         AsciiBuffer buffer = getHeaderMap().get(key);
         if( buffer == null ) {
             return null;
-        } else {
-            return Long.parseLong(buffer.toString());
         }
+        return Long.parseLong(buffer.toString());
     }
     private void setLongHeader(AsciiBuffer key, Long value) {
         if(value==null) {
@@ -256,9 +284,8 @@ public class StompJmsMessage implements javax.jms.Message {
         AsciiBuffer buffer = getHeaderMap().get(key);
         if( buffer == null ) {
             return null;
-        } else {
-            return Boolean.parseBoolean(buffer.toString());
         }
+        return Boolean.parseBoolean(buffer.toString());
     }
     private void setBooleanHeader(AsciiBuffer key, Boolean value) {
         if(value==null) {
@@ -272,9 +299,8 @@ public class StompJmsMessage implements javax.jms.Message {
         AsciiBuffer buffer = getHeaderMap().get(key);
         if( buffer == null ) {
             return null;
-        } else {
-            return StompJmsDestination.createDestination(connection, buffer.toString());
         }
+        return StompJmsDestination.createDestination(connection, buffer.toString());
     }
     private void setDestinationHeader(AsciiBuffer key, StompJmsDestination value) {
         if(value==null) {
@@ -288,6 +314,7 @@ public class StompJmsMessage implements javax.jms.Message {
         return getHeaderMap().get(MESSAGE_ID);
     }
 
+    @Override
     public String getJMSMessageID() {
         return getStringHeader(MESSAGE_ID);
     }
@@ -299,6 +326,7 @@ public class StompJmsMessage implements javax.jms.Message {
      * @param value
      * @throws JMSException
      */
+    @Override
     public void setJMSMessageID(String value) {
         setStringHeader(MESSAGE_ID, value);
     }
@@ -310,31 +338,36 @@ public class StompJmsMessage implements javax.jms.Message {
     private <T> T or(T value, T other) {
         if(value!=null) {
             return value;
-        } else {
-            return other;
         }
+        return other;
     }
 
+    @Override
     public long getJMSTimestamp() {
         return or(getLongHeader(TIMESTAMP), 0L);
     }
 
+    @Override
     public void setJMSTimestamp(long timestamp) {
         setLongHeader(TIMESTAMP, timestamp==0? null : timestamp);
     }
 
+    @Override
     public String getJMSCorrelationID() {
         return getStringHeader(CORRELATION_ID);
     }
 
+    @Override
     public void setJMSCorrelationID(String correlationId) {
         setStringHeader(CORRELATION_ID, correlationId);
     }
 
+    @Override
     public byte[] getJMSCorrelationIDAsBytes() throws JMSException {
         return getBytesHeader(CORRELATION_ID);
     }
 
+    @Override
     public void setJMSCorrelationIDAsBytes(byte[] correlationId) throws JMSException {
         setBytesHeader(CORRELATION_ID, correlationId);
     }
@@ -370,10 +403,12 @@ public class StompJmsMessage implements javax.jms.Message {
         }
     }
 
+    @Override
     public Destination getJMSReplyTo() throws JMSException {
         return getStompJmsReplyTo();
     }
 
+    @Override
     public void setJMSReplyTo(Destination destination) throws JMSException {
         setJMSReplyTo(StompJmsMessageTransformation.transformDestination(connection, destination));
     }
@@ -386,6 +421,7 @@ public class StompJmsMessage implements javax.jms.Message {
         return getDestinationHeader(REPLY_TO);
     }
 
+    @Override
     public Destination getJMSDestination() throws JMSException {
         return getStompJmsDestination();
     }
@@ -394,6 +430,7 @@ public class StompJmsMessage implements javax.jms.Message {
         return getDestinationHeader(DESTINATION);
     }
 
+    @Override
     public void setJMSDestination(Destination destination) throws JMSException {
         setJMSDestination(StompJmsMessageTransformation.transformDestination(connection, destination));
     }
@@ -402,10 +439,12 @@ public class StompJmsMessage implements javax.jms.Message {
         setDestinationHeader(DESTINATION, destination);
     }
 
+    @Override
     public int getJMSDeliveryMode() {
         return this.isPersistent() ? DeliveryMode.PERSISTENT : DeliveryMode.NON_PERSISTENT;
     }
 
+    @Override
     public void setJMSDeliveryMode(int mode) {
         this.setPersistent(mode == DeliveryMode.PERSISTENT);
     }
@@ -438,43 +477,52 @@ public class StompJmsMessage implements javax.jms.Message {
         getHeaderMap().put(JMSX_DELIVERY_COUNT, encodeHeader("" + deliveryCounter));
     }
 
+    @Override
     public boolean getJMSRedelivered() {
         return this.isRedelivered();
     }
 
+    @Override
     public void setJMSRedelivered(boolean redelivered) {
         this.setRedelivered(redelivered);
     }
 
+    @Override
     public String getJMSType() {
         return getStringHeader(TYPE);
     }
 
+    @Override
     public void setJMSType(String type) {
         setStringHeader(TYPE, type);
     }
 
+    @Override
     public long getJMSExpiration() {
         return or(getLongHeader(EXPIRATION_TIME), 0L);
     }
 
+    @Override
     public void setJMSExpiration(long expiration) {
         setLongHeader(EXPIRATION_TIME, expiration == 0 ? null : expiration);
     }
 
+    @Override
     public int getJMSPriority() {
         return or(getIntegerHeader(PRIORITY), 4);
     }
 
+    @Override
     public void setJMSPriority(int priority) {
         setIntegerHeader(PRIORITY, priority == 4 ? null : priority);
     }
 
-    public Map<String, Object> getProperties() throws IOException {
+    public Map<String, Object> getProperties() {
         lazyCreateProperties();
         return Collections.unmodifiableMap(properties);
     }
 
+    @Override
     public void clearProperties() {
         if (this.frame != null) {
             getHeaderMap().clear();
@@ -482,18 +530,18 @@ public class StompJmsMessage implements javax.jms.Message {
         properties = null;
     }
 
-    public void setProperty(String name, Object value) throws IOException {
+    public void setProperty(String name, Object value) {
         lazyCreateProperties();
         properties.put(name, value);
         getHeaderMap().put(encodeHeader(name), encodeHeader(value.toString()));
     }
 
-    public void removeProperty(String name) throws IOException {
+    public void removeProperty(String name) {
         lazyCreateProperties();
         properties.remove(name);
     }
 
-    protected void lazyCreateProperties() throws IOException {
+    protected void lazyCreateProperties() {
         if (properties == null) {
             if (this.frame != null) {
                 properties = new HashMap<String, Object>(getHeaderMap().size());
@@ -508,21 +556,15 @@ public class StompJmsMessage implements javax.jms.Message {
         }
     }
 
+    @Override
     public boolean propertyExists(String name) throws JMSException {
-        try {
-            return (this.getProperties().containsKey(name) || getObjectProperty(name) != null);
-        } catch (IOException e) {
-            throw StompJmsExceptionSupport.create(e);
-        }
+        return (this.getProperties().containsKey(name) || getObjectProperty(name) != null);
     }
 
-    public Enumeration getPropertyNames() throws JMSException {
-        try {
-            Vector<String> result = new Vector<String>(this.getProperties().keySet());
-            return result.elements();
-        } catch (IOException e) {
-            throw StompJmsExceptionSupport.create(e);
-        }
+    @Override
+    public Enumeration<String> getPropertyNames() throws JMSException {
+        Vector<String> result = new Vector<String>(this.getProperties().keySet());
+        return result.elements();
     }
 
     /**
@@ -531,14 +573,10 @@ public class StompJmsMessage implements javax.jms.Message {
      * @return Enumeration of all property names on this message
      * @throws JMSException
      */
-    public Enumeration getAllPropertyNames() throws JMSException {
-        try {
-            Vector<String> result = new Vector<String>(this.getProperties().keySet());
-            result.addAll(JMS_PROPERTY_SETERS.keySet());
-            return result.elements();
-        } catch (IOException e) {
-            throw StompJmsExceptionSupport.create(e);
-        }
+    public Enumeration<String> getAllPropertyNames() throws JMSException {
+        Vector<String> result = new Vector<String>(this.getProperties().keySet());
+        result.addAll(JMS_PROPERTY_SETERS.keySet());
+        return result.elements();
     }
 
     interface PropertySetter {
@@ -548,6 +586,7 @@ public class StompJmsMessage implements javax.jms.Message {
 
     static {
         JMS_PROPERTY_SETERS.put("JMSXDeliveryCount", new PropertySetter() {
+            @Override
             public void set(StompJmsConnection connection, StompJmsMessage message, Object value) throws MessageFormatException {
                 Integer rc = (Integer) TypeConversionSupport.convert(connection, value, Integer.class);
                 if (rc == null) {
@@ -558,56 +597,61 @@ public class StompJmsMessage implements javax.jms.Message {
         });
 
         JMS_PROPERTY_SETERS.put("JMSCorrelationID", new PropertySetter() {
+            @Override
             public void set(StompJmsConnection connection, StompJmsMessage message, Object value) throws MessageFormatException {
                 String rc = (String) TypeConversionSupport.convert(connection, value, String.class);
                 if (rc == null) {
                     throw new MessageFormatException("Property JMSCorrelationID cannot be set from a " + value.getClass().getName() + ".");
                 }
-                ((StompJmsMessage) message).setJMSCorrelationID(rc);
+                message.setJMSCorrelationID(rc);
             }
         });
         JMS_PROPERTY_SETERS.put("JMSDeliveryMode", new PropertySetter() {
+            @Override
             public void set(StompJmsConnection connection, StompJmsMessage message, Object value) throws MessageFormatException {
                 Integer rc = (Integer) TypeConversionSupport.convert(connection, value, Integer.class);
                 if (rc == null) {
                     Boolean bool = (Boolean) TypeConversionSupport.convert(connection, value, Boolean.class);
                     if (bool == null) {
                         throw new MessageFormatException("Property JMSDeliveryMode cannot be set from a " + value.getClass().getName() + ".");
-                    } else {
-                        rc = bool.booleanValue() ? DeliveryMode.PERSISTENT : DeliveryMode.NON_PERSISTENT;
                     }
+                    rc = bool.booleanValue() ? DeliveryMode.PERSISTENT : DeliveryMode.NON_PERSISTENT;
                 }
-                ((StompJmsMessage) message).setJMSDeliveryMode(rc);
+                message.setJMSDeliveryMode(rc);
             }
         });
         JMS_PROPERTY_SETERS.put("JMSExpiration", new PropertySetter() {
+            @Override
             public void set(StompJmsConnection connection, StompJmsMessage message, Object value) throws MessageFormatException {
                 Long rc = (Long) TypeConversionSupport.convert(connection, value, Long.class);
                 if (rc == null) {
                     throw new MessageFormatException("Property JMSExpiration cannot be set from a " + value.getClass().getName() + ".");
                 }
-                ((StompJmsMessage) message).setJMSExpiration(rc.longValue());
+                message.setJMSExpiration(rc.longValue());
             }
         });
         JMS_PROPERTY_SETERS.put("JMSPriority", new PropertySetter() {
+            @Override
             public void set(StompJmsConnection connection, StompJmsMessage message, Object value) throws MessageFormatException {
                 Integer rc = (Integer) TypeConversionSupport.convert(connection, value, Integer.class);
                 if (rc == null) {
                     throw new MessageFormatException("Property JMSPriority cannot be set from a " + value.getClass().getName() + ".");
                 }
-                ((StompJmsMessage) message).setJMSPriority(rc.intValue());
+                message.setJMSPriority(rc.intValue());
             }
         });
         JMS_PROPERTY_SETERS.put("JMSRedelivered", new PropertySetter() {
+            @Override
             public void set(StompJmsConnection connection, StompJmsMessage message, Object value) throws MessageFormatException {
                 Boolean rc = (Boolean) TypeConversionSupport.convert(connection, value, Boolean.class);
                 if (rc == null) {
                     throw new MessageFormatException("Property JMSRedelivered cannot be set from a " + value.getClass().getName() + ".");
                 }
-                ((StompJmsMessage) message).setJMSRedelivered(rc.booleanValue());
+                message.setJMSRedelivered(rc.booleanValue());
             }
         });
         JMS_PROPERTY_SETERS.put("JMSReplyTo", new PropertySetter() {
+            @Override
             public void set(StompJmsConnection connection, StompJmsMessage message, Object value) throws MessageFormatException {
                 StompJmsDestination rc = (StompJmsDestination) TypeConversionSupport.convert(connection, value, StompJmsDestination.class);
                 if (rc == null) {
@@ -617,25 +661,28 @@ public class StompJmsMessage implements javax.jms.Message {
             }
         });
         JMS_PROPERTY_SETERS.put("JMSTimestamp", new PropertySetter() {
+            @Override
             public void set(StompJmsConnection connection, StompJmsMessage message, Object value) throws MessageFormatException {
                 Long rc = (Long) TypeConversionSupport.convert(connection, value, Long.class);
                 if (rc == null) {
                     throw new MessageFormatException("Property JMSTimestamp cannot be set from a " + value.getClass().getName() + ".");
                 }
-                ((StompJmsMessage) message).setJMSTimestamp(rc.longValue());
+                message.setJMSTimestamp(rc.longValue());
             }
         });
         JMS_PROPERTY_SETERS.put("JMSType", new PropertySetter() {
+            @Override
             public void set(StompJmsConnection connection, StompJmsMessage message, Object value) throws MessageFormatException {
                 String rc = (String) TypeConversionSupport.convert(connection, value, String.class);
                 if (rc == null) {
                     throw new MessageFormatException("Property JMSType cannot be set from a " + value.getClass().getName() + ".");
                 }
-                ((StompJmsMessage) message).setJMSType(rc);
+                message.setJMSType(rc);
             }
         });
     }
 
+    @Override
     public void setObjectProperty(String name, Object value) throws JMSException {
         setObjectProperty(name, value, true);
     }
@@ -655,18 +702,14 @@ public class StompJmsMessage implements javax.jms.Message {
         if (setter != null && value != null) {
             setter.set(connection, this, value);
         } else {
-            try {
-                this.setProperty(name, value);
-            } catch (IOException e) {
-                throw StompJmsExceptionSupport.create(e);
-            }
+            this.setProperty(name, value);
         }
     }
 
     public void setProperties(Map<String, Object> properties) throws JMSException {
         for (Iterator<Map.Entry<String, Object>> iter = properties.entrySet().iterator(); iter.hasNext();) {
             Map.Entry<String, Object> entry = iter.next();
-            setObjectProperty((String) entry.getKey(), entry.getValue());
+            setObjectProperty(entry.getKey(), entry.getValue());
         }
     }
 
@@ -687,6 +730,7 @@ public class StompJmsMessage implements javax.jms.Message {
     }
 
 
+    @Override
     public Object getObjectProperty(String name) throws JMSException {
         if (name == null) {
             throw new NullPointerException("Property name cannot be null");
@@ -697,6 +741,7 @@ public class StompJmsMessage implements javax.jms.Message {
         return expression.evaluate(this);
     }
 
+    @Override
     public boolean getBooleanProperty(String name) throws JMSException {
         Object value = getObjectProperty(name);
         if (value == null) {
@@ -709,6 +754,7 @@ public class StompJmsMessage implements javax.jms.Message {
         return rc.booleanValue();
     }
 
+    @Override
     public byte getByteProperty(String name) throws JMSException {
         Object value = getObjectProperty(name);
         if (value == null) {
@@ -721,6 +767,7 @@ public class StompJmsMessage implements javax.jms.Message {
         return rc.byteValue();
     }
 
+    @Override
     public short getShortProperty(String name) throws JMSException {
         Object value = getObjectProperty(name);
         if (value == null) {
@@ -733,6 +780,7 @@ public class StompJmsMessage implements javax.jms.Message {
         return rc.shortValue();
     }
 
+    @Override
     public int getIntProperty(String name) throws JMSException {
         Object value = getObjectProperty(name);
         if (value == null) {
@@ -745,6 +793,7 @@ public class StompJmsMessage implements javax.jms.Message {
         return rc.intValue();
     }
 
+    @Override
     public long getLongProperty(String name) throws JMSException {
         Object value = getObjectProperty(name);
         if (value == null) {
@@ -757,6 +806,7 @@ public class StompJmsMessage implements javax.jms.Message {
         return rc.longValue();
     }
 
+    @Override
     public float getFloatProperty(String name) throws JMSException {
         Object value = getObjectProperty(name);
         if (value == null) {
@@ -769,6 +819,7 @@ public class StompJmsMessage implements javax.jms.Message {
         return rc.floatValue();
     }
 
+    @Override
     public double getDoubleProperty(String name) throws JMSException {
         Object value = getObjectProperty(name);
         if (value == null) {
@@ -781,6 +832,7 @@ public class StompJmsMessage implements javax.jms.Message {
         return rc.doubleValue();
     }
 
+    @Override
     public String getStringProperty(String name) throws JMSException {
         Object value = getObjectProperty(name);
         if (value == null) {
@@ -793,6 +845,7 @@ public class StompJmsMessage implements javax.jms.Message {
         return rc;
     }
 
+    @Override
     public void setBooleanProperty(String name, boolean value) throws JMSException {
         setBooleanProperty(name, value, true);
     }
@@ -801,30 +854,37 @@ public class StompJmsMessage implements javax.jms.Message {
         setObjectProperty(name, Boolean.valueOf(value), checkReadOnly);
     }
 
+    @Override
     public void setByteProperty(String name, byte value) throws JMSException {
         setObjectProperty(name, Byte.valueOf(value));
     }
 
+    @Override
     public void setShortProperty(String name, short value) throws JMSException {
         setObjectProperty(name, Short.valueOf(value));
     }
 
+    @Override
     public void setIntProperty(String name, int value) throws JMSException {
         setObjectProperty(name, Integer.valueOf(value));
     }
 
+    @Override
     public void setLongProperty(String name, long value) throws JMSException {
         setObjectProperty(name, Long.valueOf(value));
     }
 
+    @Override
     public void setFloatProperty(String name, float value) throws JMSException {
         setObjectProperty(name, new Float(value));
     }
 
+    @Override
     public void setDoubleProperty(String name, double value) throws JMSException {
         setObjectProperty(name, new Double(value));
     }
 
+    @Override
     public void setStringProperty(String name, String value) throws JMSException {
         setObjectProperty(name, value);
     }

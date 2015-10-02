@@ -10,14 +10,23 @@
 
 package org.fusesource.stomp.jms.util;
 
-import org.fusesource.hawtbuf.*;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.*;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+
+import org.fusesource.hawtbuf.Buffer;
+import org.fusesource.hawtbuf.BufferInputStream;
+import org.fusesource.hawtbuf.BufferOutputStream;
+import org.fusesource.hawtbuf.DataByteArrayInputStream;
+import org.fusesource.hawtbuf.DataByteArrayOutputStream;
 
 /**
  * Utilities for ByteBuffers
@@ -31,6 +40,7 @@ public class IOUtils {
      */
     public static InputStream getByteBufferInputStream(final ByteBuffer buf) {
         return new InputStream() {
+            @Override
             public int read() throws IOException {
                 if (!buf.hasRemaining()) {
                     return -1;
@@ -38,6 +48,7 @@ public class IOUtils {
                 return buf.get();
             }
 
+            @Override
             public int read(byte[] bytes, int off, int len) throws IOException {
                 int toWrite = Math.min(len, buf.remaining());
                 buf.get(bytes, off, toWrite);
@@ -54,10 +65,12 @@ public class IOUtils {
      */
     public static OutputStream getByteBufferOutputStream(final ByteBuffer buf) {
         return new OutputStream() {
+            @Override
             public void write(int b) throws IOException {
                 buf.put((byte) b);
             }
 
+            @Override
             public void write(byte[] bytes, int off, int len) throws IOException {
                 buf.put(bytes, off, len);
             }
@@ -100,7 +113,8 @@ public class IOUtils {
             byte[] data = bufferOut.toByteArray();
             out.writeInt(data.length);
             out.write(data);
-        } else {
+        }
+        else {
             out.writeInt(0);
         }
     }
@@ -118,8 +132,7 @@ public class IOUtils {
             in.readFully(rawData);
             InputStream is = new ByteArrayInputStream(rawData);
             DataInputStream dataIn = new DataInputStream(is);
-            ClassLoadingAwareObjectInputStream objIn = new ClassLoadingAwareObjectInputStream(dataIn);
-            try {
+            try (ClassLoadingAwareObjectInputStream objIn = new ClassLoadingAwareObjectInputStream(dataIn);) {
                 result = objIn.readObject();
             } catch (ClassNotFoundException e) {
                 IOException ex = new IOException("Class not Found " + e.getMessage());
@@ -141,8 +154,7 @@ public class IOUtils {
         if (buffer != null) {
             InputStream is = new ByteArrayInputStream(buffer.data, buffer.offset, buffer.length);
             DataInputStream dataIn = new DataInputStream(is);
-            ClassLoadingAwareObjectInputStream objIn = new ClassLoadingAwareObjectInputStream(dataIn);
-            try {
+            try (ClassLoadingAwareObjectInputStream objIn = new ClassLoadingAwareObjectInputStream(dataIn);) {
                 return objIn.readObject();
             } catch (ClassNotFoundException e) {
                 IOException ex = new IOException("Class not Found " + e.getMessage());
@@ -152,7 +164,6 @@ public class IOUtils {
         }
         return null;
     }
-
 
     /**
      * Compress the buffer
@@ -203,8 +214,8 @@ public class IOUtils {
     static boolean isCompressed(Buffer data) {
         boolean result = false;
         if (data != null && data.length > 2) {
-            int ch1 = (int) (data.get(0) & 0xff);
-            int ch2 = (int) (data.get(1) & 0xff);
+            int ch1 = data.get(0) & 0xff;
+            int ch2 = data.get(1) & 0xff;
             int magic = (ch1 | (ch2 << 8));
             result = (magic == GZIPInputStream.GZIP_MAGIC);
         }

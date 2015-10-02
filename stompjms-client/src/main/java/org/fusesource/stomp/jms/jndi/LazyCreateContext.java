@@ -21,10 +21,14 @@ import javax.naming.NamingException;
 
 /**
  * Allows users to dynamically create items
- * 
- * 
+ *
+ *
  */
 public abstract class LazyCreateContext extends ReadOnlyContext {
+
+    private static final long serialVersionUID = -1986753489224224363L;
+
+    @Override
     public Object lookup(String name) throws NamingException {
         try {
             return super.lookup(name);

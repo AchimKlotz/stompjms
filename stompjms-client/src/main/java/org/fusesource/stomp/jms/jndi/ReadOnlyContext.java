@@ -23,6 +23,8 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
+
 import javax.naming.Binding;
 import javax.naming.CompositeName;
 import javax.naming.Context;
@@ -39,24 +41,24 @@ import javax.naming.Reference;
 import javax.naming.spi.NamingManager;
 
 /**
- * A read-only Context <p/> This version assumes it and all its subcontext are
- * read-only and any attempt to modify (e.g. through bind) will result in an
- * OperationNotSupportedException. Each Context in the tree builds a cache of
- * the entries in all sub-contexts to optimise the performance of lookup.
+ * A read-only Context
+ * <p/>
+ * This version assumes it and all its subcontext are read-only and any attempt to modify (e.g. through bind) will
+ * result in an OperationNotSupportedException. Each Context in the tree builds a cache of the entries in all
+ * sub-contexts to optimise the performance of lookup.
  * </p>
  * <p>
- * This implementation is intended to optimise the performance of lookup(String)
- * to about the level of a HashMap get. It has been observed that the scheme
- * resolution phase performed by the JVM takes considerably longer, so for
- * optimum performance lookups should be coded like:
+ * This implementation is intended to optimise the performance of lookup(String) to about the level of a HashMap get. It
+ * has been observed that the scheme resolution phase performed by the JVM takes considerably longer, so for optimum
+ * performance lookups should be coded like:
  * </p>
  * <code>
  * Context componentContext = (Context)new InitialContext().lookup("java:comp");
  * String envEntry = (String) componentContext.lookup("env/myEntry");
  * String envEntry2 = (String) componentContext.lookup("env/myEntry2");
  * </code>
- * 
- *  $Date: 2005/08/27 03:52:39 $
+ *
+ * $Date: 2005/08/27 03:52:39 $
  */
 @SuppressWarnings("unchecked")
 public class ReadOnlyContext implements Context, Serializable {
@@ -77,20 +79,22 @@ public class ReadOnlyContext implements Context, Serializable {
         treeBindings = new HashMap<String, Object>();
     }
 
-    public ReadOnlyContext(Hashtable env) {
+    public ReadOnlyContext(Hashtable<String, Object> env) {
         if (env == null) {
             this.environment = new Hashtable<String, Object>();
-        } else {
+        }
+        else {
             this.environment = new Hashtable<String, Object>(env);
         }
         this.bindings = Collections.EMPTY_MAP;
         this.treeBindings = Collections.EMPTY_MAP;
     }
 
-    public ReadOnlyContext(Hashtable environment, Map<String, Object> bindings) {
+    public ReadOnlyContext(Hashtable<String, Object> environment, Map<String, Object> bindings) {
         if (environment == null) {
             this.environment = new Hashtable<String, Object>();
-        } else {
+        }
+        else {
             this.environment = new Hashtable<String, Object>(environment);
         }
         this.bindings = new HashMap<String, Object>();
@@ -107,12 +111,13 @@ public class ReadOnlyContext implements Context, Serializable {
         frozen = true;
     }
 
-    public ReadOnlyContext(Hashtable environment, Map bindings, String nameInNamespace) {
+    public ReadOnlyContext(Hashtable<String, Object> environment, Map<String, Object> bindings,
+            String nameInNamespace) {
         this(environment, bindings);
         this.nameInNamespace = nameInNamespace;
     }
 
-    protected ReadOnlyContext(ReadOnlyContext clone, Hashtable env) {
+    protected ReadOnlyContext(ReadOnlyContext clone, Hashtable<String, Object> env) {
         this.bindings = clone.bindings;
         this.treeBindings = clone.treeBindings;
         this.environment = new Hashtable<String, Object>(env);
@@ -132,15 +137,12 @@ public class ReadOnlyContext implements Context, Serializable {
     }
 
     /**
-     * internalBind is intended for use only during setup or possibly by
-     * suitably synchronized superclasses. It binds every possible lookup into a
-     * map in each context. To do this, each context strips off one name segment
-     * and if necessary creates a new context for it. Then it asks that context
-     * to bind the remaining name. It returns a map containing all the bindings
-     * from the next context, plus the context it just created (if it in fact
-     * created it). (the names are suitably extended by the segment originally
-     * lopped off).
-     * 
+     * internalBind is intended for use only during setup or possibly by suitably synchronized superclasses. It binds
+     * every possible lookup into a map in each context. To do this, each context strips off one name segment and if
+     * necessary creates a new context for it. Then it asks that context to bind the remaining name. It returns a map
+     * containing all the bindings from the next context, plus the context it just created (if it in fact created it).
+     * (the names are suitably extended by the segment originally lopped off).
+     *
      * @param name
      * @param value
      * @return
@@ -148,7 +150,7 @@ public class ReadOnlyContext implements Context, Serializable {
      */
     protected Map<String, Object> internalBind(String name, Object value) throws NamingException {
         assert name != null && name.length() > 0;
-        assert !frozen;
+        assert!frozen;
 
         Map<String, Object> newBindings = new HashMap<String, Object>();
         int pos = name.indexOf('/');
@@ -158,25 +160,27 @@ public class ReadOnlyContext implements Context, Serializable {
             }
             bindings.put(name, value);
             newBindings.put(name, value);
-        } else {
+        }
+        else {
             String segment = name.substring(0, pos);
             assert segment != null;
-            assert !segment.equals("");
+            assert!segment.equals("");
             Object o = treeBindings.get(segment);
             if (o == null) {
                 o = newContext();
                 treeBindings.put(segment, o);
                 bindings.put(segment, o);
                 newBindings.put(segment, o);
-            } else if (!(o instanceof ReadOnlyContext)) {
+            }
+            else if (!(o instanceof ReadOnlyContext)) {
                 throw new NamingException("Something already bound where a subcontext should go");
             }
-            ReadOnlyContext readOnlyContext = (ReadOnlyContext)o;
+            ReadOnlyContext readOnlyContext = (ReadOnlyContext) o;
             String remainder = name.substring(pos + 1);
             Map<String, Object> subBindings = readOnlyContext.internalBind(remainder, value);
-            for (Iterator iterator = subBindings.entrySet().iterator(); iterator.hasNext();) {
-                Map.Entry entry = (Map.Entry)iterator.next();
-                String subName = segment + "/" + (String)entry.getKey();
+            for (Iterator<Entry<String, Object>> iterator = subBindings.entrySet().iterator(); iterator.hasNext();) {
+                Entry<String, Object> entry = iterator.next();
+                String subName = segment + "/" + entry.getKey();
                 Object bound = entry.getValue();
                 treeBindings.put(subName, bound);
                 newBindings.put(subName, bound);
@@ -189,18 +193,22 @@ public class ReadOnlyContext implements Context, Serializable {
         return new ReadOnlyContext();
     }
 
+    @Override
     public Object addToEnvironment(String propName, Object propVal) throws NamingException {
         return environment.put(propName, propVal);
     }
 
+    @Override
     public Hashtable<String, Object> getEnvironment() throws NamingException {
-        return (Hashtable<String, Object>)environment.clone();
+        return (Hashtable<String, Object>) environment.clone();
     }
 
+    @Override
     public Object removeFromEnvironment(String propName) throws NamingException {
         return environment.remove(propName);
     }
 
+    @Override
     public Object lookup(String name) throws NamingException {
         if (name.length() == 0) {
             return this;
@@ -218,28 +226,27 @@ public class ReadOnlyContext implements Context, Serializable {
                     throw new NamingException("scheme " + scheme + " not recognized");
                 }
                 return ctx.lookup(name);
-            } else {
-                // Split out the first name of the path
-                // and look for it in the bindings map.
-                CompositeName path = new CompositeName(name);
-
-                if (path.size() == 0) {
-                    return this;
-                } else {
-                    String first = path.get(0);
-                    Object obj = bindings.get(first);
-                    if (obj == null) {
-                        throw new NameNotFoundException(name);
-                    } else if (obj instanceof Context && path.size() > 1) {
-                        Context subContext = (Context)obj;
-                        obj = subContext.lookup(path.getSuffix(1));
-                    }
-                    return obj;
-                }
             }
+            // Split out the first name of the path
+            // and look for it in the bindings map.
+            CompositeName path = new CompositeName(name);
+
+            if (path.size() == 0) {
+                return this;
+            }
+            String first = path.get(0);
+            Object obj = bindings.get(first);
+            if (obj == null) {
+                throw new NameNotFoundException(name);
+            }
+            else if (obj instanceof Context && path.size() > 1) {
+                Context subContext = (Context) obj;
+                obj = subContext.lookup(path.getSuffix(1));
+            }
+            return obj;
         }
         if (result instanceof LinkRef) {
-            LinkRef ref = (LinkRef)result;
+            LinkRef ref = (LinkRef) result;
             result = lookup(ref.getLinkName());
         }
         if (result instanceof Reference) {
@@ -248,7 +255,7 @@ public class ReadOnlyContext implements Context, Serializable {
             } catch (NamingException e) {
                 throw e;
             } catch (Exception e) {
-                throw (NamingException)new NamingException("could not look up : " + name).initCause(e);
+                throw (NamingException) new NamingException("could not look up : " + name).initCause(e);
             }
         }
         if (result instanceof ReadOnlyContext) {
@@ -256,173 +263,215 @@ public class ReadOnlyContext implements Context, Serializable {
             if (prefix.length() > 0) {
                 prefix = prefix + SEPARATOR;
             }
-            result = new ReadOnlyContext((ReadOnlyContext)result, environment, prefix + name);
+            result = new ReadOnlyContext((ReadOnlyContext) result, environment, prefix + name);
         }
         return result;
     }
 
+    @Override
     public Object lookup(Name name) throws NamingException {
         return lookup(name.toString());
     }
 
+    @Override
     public Object lookupLink(String name) throws NamingException {
         return lookup(name);
     }
 
+    @Override
     public Name composeName(Name name, Name prefix) throws NamingException {
-        Name result = (Name)prefix.clone();
+        Name result = (Name) prefix.clone();
         result.addAll(name);
         return result;
     }
 
+    @Override
     public String composeName(String name, String prefix) throws NamingException {
         CompositeName result = new CompositeName(prefix);
         result.addAll(new CompositeName(name));
         return result.toString();
     }
 
-    public NamingEnumeration list(String name) throws NamingException {
+    @Override
+    public NamingEnumeration<NameClassPair> list(String name) throws NamingException {
         Object o = lookup(name);
         if (o == this) {
             return new ListEnumeration();
-        } else if (o instanceof Context) {
-            return ((Context)o).list("");
-        } else {
+        }
+        else if (o instanceof Context) {
+            return ((Context) o).list("");
+        }
+        else {
             throw new NotContextException();
         }
     }
 
-    public NamingEnumeration listBindings(String name) throws NamingException {
+    @Override
+    public NamingEnumeration<Binding> listBindings(String name) throws NamingException {
         Object o = lookup(name);
         if (o == this) {
             return new ListBindingEnumeration();
-        } else if (o instanceof Context) {
-            return ((Context)o).listBindings("");
-        } else {
+        }
+        else if (o instanceof Context) {
+            return ((Context) o).listBindings("");
+        }
+        else {
             throw new NotContextException();
         }
     }
 
+    @Override
     public Object lookupLink(Name name) throws NamingException {
         return lookupLink(name.toString());
     }
 
-    public NamingEnumeration list(Name name) throws NamingException {
+    @Override
+    public NamingEnumeration<NameClassPair> list(Name name) throws NamingException {
         return list(name.toString());
     }
 
-    public NamingEnumeration listBindings(Name name) throws NamingException {
+    @Override
+    public NamingEnumeration<Binding> listBindings(Name name) throws NamingException {
         return listBindings(name.toString());
     }
 
+    @Override
     public void bind(Name name, Object obj) throws NamingException {
         throw new OperationNotSupportedException();
     }
 
+    @Override
     public void bind(String name, Object obj) throws NamingException {
         throw new OperationNotSupportedException();
     }
 
+    @Override
     public void close() throws NamingException {
         // ignore
     }
 
+    @Override
     public Context createSubcontext(Name name) throws NamingException {
         throw new OperationNotSupportedException();
     }
 
+    @Override
     public Context createSubcontext(String name) throws NamingException {
         throw new OperationNotSupportedException();
     }
 
+    @Override
     public void destroySubcontext(Name name) throws NamingException {
         throw new OperationNotSupportedException();
     }
 
+    @Override
     public void destroySubcontext(String name) throws NamingException {
         throw new OperationNotSupportedException();
     }
 
+    @Override
     public String getNameInNamespace() throws NamingException {
         return nameInNamespace;
     }
 
+    @Override
     public NameParser getNameParser(Name name) throws NamingException {
         return NAME_PARSER;
     }
 
+    @Override
     public NameParser getNameParser(String name) throws NamingException {
         return NAME_PARSER;
     }
 
+    @Override
     public void rebind(Name name, Object obj) throws NamingException {
         throw new OperationNotSupportedException();
     }
 
+    @Override
     public void rebind(String name, Object obj) throws NamingException {
         throw new OperationNotSupportedException();
     }
 
+    @Override
     public void rename(Name oldName, Name newName) throws NamingException {
         throw new OperationNotSupportedException();
     }
 
+    @Override
     public void rename(String oldName, String newName) throws NamingException {
         throw new OperationNotSupportedException();
     }
 
+    @Override
     public void unbind(Name name) throws NamingException {
         throw new OperationNotSupportedException();
     }
 
+    @Override
     public void unbind(String name) throws NamingException {
         throw new OperationNotSupportedException();
     }
 
-    private abstract class LocalNamingEnumeration implements NamingEnumeration {
-        private final Iterator i = bindings.entrySet().iterator();
+    private abstract class LocalNamingEnumeration<T> implements NamingEnumeration<T> {
+        private final Iterator<Map.Entry<String, Object>> i = bindings.entrySet().iterator();
 
+        @Override
         public boolean hasMore() throws NamingException {
             return i.hasNext();
         }
 
+        @Override
         public boolean hasMoreElements() {
             return i.hasNext();
         }
 
-        protected Map.Entry getNext() {
-            return (Map.Entry)i.next();
+        protected Map.Entry<String, Object> getNext() {
+            return i.next();
         }
 
+        @Override
         public void close() throws NamingException {
         }
+
+        @Override
+        public abstract T next() throws NamingException;
+
+        @Override
+        public abstract T nextElement();
     }
 
-    private class ListEnumeration extends LocalNamingEnumeration {
+    private class ListEnumeration extends LocalNamingEnumeration<NameClassPair> {
         ListEnumeration() {
         }
 
-        public Object next() throws NamingException {
+        @Override
+        public NameClassPair next() throws NamingException {
             return nextElement();
         }
 
-        public Object nextElement() {
-            Map.Entry entry = getNext();
-            return new NameClassPair((String)entry.getKey(), entry.getValue().getClass().getName());
+        @Override
+        public NameClassPair nextElement() {
+            Map.Entry<String, Object> entry = super.getNext();
+            return new NameClassPair(entry.getKey(), entry.getValue().getClass().getName());
         }
     }
 
-    private class ListBindingEnumeration extends LocalNamingEnumeration {
+    private class ListBindingEnumeration extends LocalNamingEnumeration<Binding> {
         ListBindingEnumeration() {
         }
 
-        public Object next() throws NamingException {
+        @Override
+        public Binding next() throws NamingException {
             return nextElement();
         }
 
-        public Object nextElement() {
-            Map.Entry entry = getNext();
-            return new Binding((String)entry.getKey(), entry.getValue());
+        @Override
+        public Binding nextElement() {
+            Map.Entry<String, Object> entry = getNext();
+            return new Binding(entry.getKey(), entry.getValue());
         }
     }
 }

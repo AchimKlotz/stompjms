@@ -19,6 +19,7 @@ package org.fusesource.stomp.jms.jndi;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.naming.Context;
 import javax.naming.NamingException;
@@ -33,7 +34,7 @@ import javax.naming.NamingException;
  * necessary when the list of nodes is provided. So the role of this class is to
  * transform properties before passing it to
  * <CODE>ActiveMQInitialContextFactory</CODE>.
- * 
+ *
  * @author Pawel Tucholski
  */
 public class WasStompJmsInitialContextFactory extends StompJmsInitialContextFactory {
@@ -41,9 +42,11 @@ public class WasStompJmsInitialContextFactory extends StompJmsInitialContextFact
     /**
      * @see javax.naming.spi.InitialContextFactory#getInitialContext(java.util.Hashtable)
      */
-    public Context getInitialContext(Hashtable environment) throws NamingException {
+    @SuppressWarnings("unchecked")
+    @Override
+    public Context getInitialContext(Hashtable<?, ?> environment) throws NamingException {
 
-        return super.getInitialContext(transformEnvironment(environment));
+        return super.getInitialContext(transformEnvironment((Hashtable<String, String>) environment));
     }
 
     /**
@@ -54,20 +57,20 @@ public class WasStompJmsInitialContextFactory extends StompJmsInitialContextFact
      * <li>(java.naming.connectionFactoryNames,value)=>(connectionFactoryNames,value)
      * <li>(java.naming.provider.url,url1;url2)=>java.naming.provider.url,url1,url1)
      * <ul>
-     * 
+     *
      * @param environment properties for transformation
      * @return environment after transformation
      */
-    protected Hashtable transformEnvironment(Hashtable environment) {
+    protected Hashtable<String, Object> transformEnvironment(Hashtable<String, String> environment) {
 
-        Hashtable environment1 = new Hashtable();
+        Hashtable<String, Object> environment1 = new Hashtable<>();
 
-        Iterator it = environment.entrySet().iterator();
+        Iterator<Map.Entry<String, String>> it = environment.entrySet().iterator();
 
         while (it.hasNext()) {
-            Map.Entry entry = (Map.Entry)it.next();
-            String key = (String)entry.getKey();
-            String value = (String)entry.getValue();
+            Entry<String, String> entry = it.next();
+            String key = entry.getKey();
+            String value = entry.getValue();
 
             if (key.startsWith("java.naming.queue")) {
                 String key1 = key.substring("java.naming.queue.".length());

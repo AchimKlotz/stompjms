@@ -10,28 +10,30 @@
 
 package org.fusesource.stomp.jms.message;
 
-import org.fusesource.hawtbuf.Buffer;
-import org.fusesource.stomp.jms.StompJmsExceptionSupport;
+import static org.fusesource.stomp.client.Constants.TRANSFORMATION;
+
+import java.io.UnsupportedEncodingException;
 
 import javax.jms.JMSException;
 import javax.jms.MessageNotWriteableException;
 import javax.jms.TextMessage;
-import java.io.UnsupportedEncodingException;
 
-import static org.fusesource.stomp.client.Constants.TRANSFORMATION;
+import org.fusesource.hawtbuf.Buffer;
+import org.fusesource.stomp.jms.StompJmsExceptionSupport;
 
 
 public class StompJmsTextMessage extends StompJmsMessage implements TextMessage {
     protected String text;
 
+    @Override
     public JmsMsgType getMsgType() {
         if( text == null ) {
             return JmsMsgType.TEXT_NULL;
-        } else {
-            return JmsMsgType.TEXT;
         }
+        return JmsMsgType.TEXT;
     }
 
+    @Override
     public StompJmsMessage copy() throws JMSException {
         StompJmsTextMessage other = new StompJmsTextMessage();
         other.copy(this);
@@ -43,12 +45,14 @@ public class StompJmsTextMessage extends StompJmsMessage implements TextMessage 
         this.text = other.text;
     }
 
+    @Override
     public void setText(String text) throws MessageNotWriteableException {
         checkReadOnlyBody();
         this.text = text;
         setContent(null);
     }
 
+    @Override
     public String getText() throws JMSException {
         Buffer buffer = getContent();
         if (text == null && buffer != null) {
@@ -58,6 +62,7 @@ public class StompJmsTextMessage extends StompJmsMessage implements TextMessage 
         return text;
     }
 
+    @Override
     public void storeContent() throws JMSException {
         try {
             if( text == null ) {
@@ -82,12 +87,14 @@ public class StompJmsTextMessage extends StompJmsMessage implements TextMessage 
      * @throws JMSException if the JMS provider fails to clear the message body
      *                      due to some internal error.
      */
+    @Override
     public void clearBody() throws JMSException {
         super.clearBody();
         this.text = null;
     }
 
 
+    @Override
     public String toString() {
         return super.toString() + ":text=" + text;
     }

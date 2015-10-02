@@ -9,16 +9,16 @@
  */
 package org.fusesource.stomp.codec;
 
-import org.fusesource.hawtbuf.AsciiBuffer;
-import org.fusesource.hawtbuf.Buffer;
-import org.fusesource.hawtdispatch.transport.AbstractProtocolCodec;
-import org.fusesource.hawtdispatch.util.BufferPools;
+import static org.fusesource.stomp.client.Constants.COLON_BYTE;
+import static org.fusesource.stomp.client.Constants.CONTENT_LENGTH;
 
 import java.io.IOException;
 import java.util.ArrayList;
 
-import static org.fusesource.stomp.client.Constants.COLON_BYTE;
-import static org.fusesource.stomp.client.Constants.CONTENT_LENGTH;
+import org.fusesource.hawtbuf.AsciiBuffer;
+import org.fusesource.hawtbuf.Buffer;
+import org.fusesource.hawtdispatch.transport.AbstractProtocolCodec;
+import org.fusesource.hawtdispatch.util.BufferPools;
 
 /**
  * <p>
@@ -52,6 +52,7 @@ public class StompProtocolCodec extends AbstractProtocolCodec {
     }
 
     final Action read_action = new Action() {
+        @Override
         public Object apply() throws IOException {
             Buffer line = readUntil((byte) '\n', max_command_length, "The maximum command length was exceeded");
             if (line != null) {
@@ -73,6 +74,7 @@ public class StompProtocolCodec extends AbstractProtocolCodec {
         final AsciiBuffer[] contentLengthValue = new AsciiBuffer[1];
         final ArrayList<StompFrame.HeaderEntry> headers = new ArrayList<StompFrame.HeaderEntry>(10);
         return new Action() {
+            @Override
             public Object apply() throws IOException {
                 Buffer line = readUntil((byte) '\n', max_header_length, "The maximum header length was exceeded");
                 if (line != null) {
@@ -136,6 +138,7 @@ public class StompProtocolCodec extends AbstractProtocolCodec {
 
     private Action read_binary_body(final StompFrame frame, final int contentLength) {
         return new Action() {
+            @Override
             public Object apply() throws IOException {
                 Buffer content = readBytes(contentLength + 1);
                 if (content != null) {
@@ -145,24 +148,23 @@ public class StompProtocolCodec extends AbstractProtocolCodec {
                     frame.content(content.moveTail(-1));
                     nextDecodeAction = read_action;
                     return frame;
-                } else {
-                    return null;
                 }
+                return null;
             }
         };
     }
 
     private Action read_text_body(final StompFrame frame) {
         return new Action() {
+            @Override
             public Object apply() throws IOException {
                 Buffer content = readUntil((byte) 0);
                 if (content != null) {
                     nextDecodeAction = read_action;
                     frame.content(content.moveTail(-1));
                     return frame;
-                } else {
-                    return null;
                 }
+                return null;
             }
         };
     }

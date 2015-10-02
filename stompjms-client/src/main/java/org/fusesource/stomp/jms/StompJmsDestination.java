@@ -10,17 +10,17 @@
 
 package org.fusesource.stomp.jms;
 
-import org.fusesource.hawtbuf.AsciiBuffer;
-import org.fusesource.stomp.codec.StompFrame;
-import org.fusesource.stomp.jms.jndi.JNDIStorable;
-
-import javax.jms.InvalidDestinationException;
-import javax.jms.JMSException;
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Map;
+
+import javax.jms.JMSException;
+
+import org.fusesource.hawtbuf.AsciiBuffer;
+import org.fusesource.stomp.codec.StompFrame;
+import org.fusesource.stomp.jms.jndi.JNDIStorable;
 
 
 /**
@@ -56,6 +56,7 @@ public class StompJmsDestination extends JNDIStorable implements Externalizable,
     }
 
 
+    @Override
     public String toString() {
         if (toString == null) {
             toString = getPrefix() + getName();
@@ -142,6 +143,7 @@ public class StompJmsDestination extends JNDIStorable implements Externalizable,
      *         the specified object.
      * @see java.lang.Comparable#compareTo(java.lang.Object)
      */
+    @Override
     public int compareTo(StompJmsDestination other) {
         if (other != null) {
             if (isTemporary() == other.isTemporary()) {
@@ -152,6 +154,7 @@ public class StompJmsDestination extends JNDIStorable implements Externalizable,
         return -1;
     }
 
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -164,6 +167,7 @@ public class StompJmsDestination extends JNDIStorable implements Externalizable,
         return getName().equals(d.getName());
     }
 
+    @Override
     public int hashCode() {
         if (hashValue == 0) {
             hashValue = getName().hashCode();
@@ -171,6 +175,7 @@ public class StompJmsDestination extends JNDIStorable implements Externalizable,
         return hashValue;
     }
 
+    @Override
     public void writeExternal(ObjectOutput out) throws IOException {
         out.writeUTF(getPrefix());
         out.writeUTF(getName());
@@ -178,6 +183,7 @@ public class StompJmsDestination extends JNDIStorable implements Externalizable,
         out.writeBoolean(isTemporary());
     }
 
+    @Override
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
         setPrefix(in.readUTF());
         setName(in.readUTF());
