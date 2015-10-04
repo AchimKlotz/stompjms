@@ -73,8 +73,7 @@ public class CallbackConnection {
             @Override
             public void onTransportFailure(IOException error) {
                 processFailure(error);
-//                CallbackConnection.this.transport.suspendRead();
-//                CallbackConnection.this.transport.stop(null);
+                CallbackConnection.this.transport.stop(null);
             }
         });
     }

@@ -10,6 +10,7 @@
 
 package org.fusesource.stomp.jms;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
@@ -26,7 +27,6 @@ import javax.jms.TopicConnection;
 import javax.jms.TopicConnectionFactory;
 import javax.net.ssl.SSLContext;
 
-import org.fusesource.stomp.client.ProtocolException;
 import org.fusesource.stomp.jms.jndi.JNDIStorable;
 import org.fusesource.stomp.jms.util.PropertyUtil;
 
@@ -189,11 +189,10 @@ public class StompJmsConnectionFactory extends JNDIStorable
             @Override
             public void onException(JMSException exception) {
                 try {
-                    if (exception.getCause() instanceof ProtocolException) {
+                    if (exception.getCause() instanceof IOException) {
                         result.close();
                     }
                 } catch (JMSException e) {
-                    // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
             }
