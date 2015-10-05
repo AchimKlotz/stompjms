@@ -17,12 +17,11 @@
   <parent>
     <groupId>org.fusesource.stompjms</groupId>
     <artifactId>stompjms-project</artifactId>
-    <version>1.20-SNAPSHOT</version>
+    <version>1.20</version>
   </parent>
   
   <groupId>org.fusesource.stompjms</groupId>
   <artifactId>stompjms-activemq-test</artifactId>
-  <version>1.20-SNAPSHOT</version>
   
   <name>${project.artifactId}</name>
   <description>Tests the stompjms client against ActiveMQ</description>
