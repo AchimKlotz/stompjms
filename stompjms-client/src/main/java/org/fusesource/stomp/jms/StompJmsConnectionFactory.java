@@ -29,12 +29,17 @@ import javax.net.ssl.SSLContext;
 
 import org.fusesource.stomp.jms.jndi.JNDIStorable;
 import org.fusesource.stomp.jms.util.PropertyUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Jms ConnectionFactory implementation
  */
 public class StompJmsConnectionFactory extends JNDIStorable
         implements ConnectionFactory, QueueConnectionFactory, TopicConnectionFactory {
+
+    private final static Logger LOG = LoggerFactory.getLogger(StompJmsConnectionFactory.class);
+
     private URI brokerURI;
     private URI localURI;
     private String username;
@@ -90,7 +95,7 @@ public class StompJmsConnectionFactory extends JNDIStorable
             Map<String, String> result = PropertyUtil.getProperties(this);
             map.putAll(result);
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error(e.getLocalizedMessage(), e);
         }
 
     }
@@ -190,10 +195,11 @@ public class StompJmsConnectionFactory extends JNDIStorable
             public void onException(JMSException exception) {
                 try {
                     if (exception.getCause() instanceof IOException) {
+                        LOG.error(exception.getLocalizedMessage(), exception);
                         result.close();
                     }
                 } catch (JMSException e) {
-                    e.printStackTrace();
+                    LOG.error(e.getLocalizedMessage(), e);
                 }
             }
         });

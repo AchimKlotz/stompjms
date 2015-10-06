@@ -24,6 +24,8 @@ import javax.jms.QueueBrowser;
 
 import org.fusesource.hawtbuf.AsciiBuffer;
 import org.fusesource.stomp.jms.message.StompJmsMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A client uses a <CODE>QueueBrowser</CODE> object to look at messages on a
@@ -51,6 +53,8 @@ import org.fusesource.stomp.jms.message.StompJmsMessage;
  */
 
 public class StompJmsQueueBrowser implements QueueBrowser, Enumeration<Message> {
+
+    private final static Logger LOG = LoggerFactory.getLogger(StompJmsQueueBrowser.class);
 
     private final StompJmsSession session;
     private final StompJmsDestination destination;
@@ -119,7 +123,7 @@ public class StompJmsQueueBrowser implements QueueBrowser, Enumeration<Message> 
             consumer.close();
             consumer = null;
         } catch (JMSException e) {
-            e.printStackTrace();
+            LOG.error(e.getLocalizedMessage(), e);
         }
     }
 

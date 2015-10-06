@@ -40,6 +40,9 @@ import javax.naming.OperationNotSupportedException;
 import javax.naming.Reference;
 import javax.naming.spi.NamingManager;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * A read-only Context
  * <p/>
@@ -65,6 +68,8 @@ public class ReadOnlyContext implements Context, Serializable {
     public static final String SEPARATOR = "/";
     protected static final NameParser NAME_PARSER = new NameParserImpl();
     private static final long serialVersionUID = -5754338187296859149L;
+
+    private final static Logger LOG = LoggerFactory.getLogger(ReadOnlyContext.class);
 
     protected final Hashtable<String, Object> environment; // environment for this context
     protected final Map<String, Object> bindings; // bindings at my level
@@ -104,7 +109,7 @@ public class ReadOnlyContext implements Context, Serializable {
                 try {
                     internalBind(binding.getKey(), binding.getValue());
                 } catch (Throwable e) {
-                    e.printStackTrace();
+                    LOG.error(e.getLocalizedMessage(), e);
                 }
             }
         }

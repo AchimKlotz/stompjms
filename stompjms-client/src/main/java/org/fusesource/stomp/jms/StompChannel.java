@@ -54,8 +54,12 @@ import org.fusesource.stomp.client.Stomp;
 import org.fusesource.stomp.codec.StompFrame;
 import org.fusesource.stomp.jms.message.StompJmsMessage;
 import org.fusesource.stomp.jms.util.StompTranslator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class StompChannel {
+
+    private final static Logger LOG = LoggerFactory.getLogger(StompChannel.class);
 
     private static final StompServerAdaptor STOMP_SERVER_ADAPTORS[] = new StompServerAdaptor[]{
         new ApolloServerAdaptor(),
@@ -84,6 +88,8 @@ public class StompChannel {
     StompServerAdaptor serverAdaptor;
     String clientId;
     private long disconnectTimeout = 10000;
+
+
 
     public AsciiBuffer sessionId() {
         return sessionId;
@@ -540,13 +546,11 @@ public class StompChannel {
             l.onException(StompJmsExceptionSupport.create(e));
         } else {
             if( started.get() ) {
-                e.printStackTrace();
+                LOG.error(e.getLocalizedMessage(), e);
                 try {
                     this.close();
                 } catch (JMSException e1) {
-                    // TODO Auto-generated catch block
-                    e1.printStackTrace();
-                }
+                    LOG.error(e1.getLocalizedMessage(), e1);                }
             }
         }
     }

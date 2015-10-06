@@ -28,6 +28,8 @@ import org.fusesource.hawtdispatch.Task;
 import org.fusesource.hawtdispatch.transport.DefaultTransportListener;
 import org.fusesource.hawtdispatch.transport.Transport;
 import org.fusesource.stomp.codec.StompFrame;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <p>
@@ -36,6 +38,8 @@ import org.fusesource.stomp.codec.StompFrame;
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
 public class CallbackConnection {
+
+    private final static Logger LOG = LoggerFactory.getLogger(CallbackConnection.class);
 
     private static class OverflowEntry {
         final StompFrame frame;
@@ -142,7 +146,7 @@ public class CallbackConnection {
                 try {
                     receiver.onFailure(failure);
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    LOG.error(e.getLocalizedMessage(), e);
                 }
             }
         }
@@ -253,7 +257,7 @@ public class CallbackConnection {
                 try {
                     refiller.run();
                 } catch (Throwable e) {
-                    e.printStackTrace();
+                    LOG.error(e.getLocalizedMessage(), e);
                 }
             }
         }
