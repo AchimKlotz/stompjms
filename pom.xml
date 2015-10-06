@@ -22,7 +22,7 @@
   
   <groupId>org.fusesource.stompjms</groupId>
   <artifactId>stompjms-project</artifactId>
-  <version>1.20</version>
+  <version>1.21-SNAPSHOT</version>
   <packaging>pom</packaging>
   
   <name>${project.artifactId}</name>
@@ -39,8 +39,8 @@
     <slf4j-version>1.7.12</slf4j-version>
     <hawtbuf-version>1.11</hawtbuf-version>
     <hawtdispatch-version>1.22</hawtdispatch-version>
-    <apollo-version>1.6</apollo-version>
-    <activemq-version>5.9.0</activemq-version>
+    <apollo-version>1.7.1</apollo-version>
+    <activemq-version>5.12.0</activemq-version>
     <mvnplugins-version>1.15</mvnplugins-version>
     <mockito.version>1.9.5</mockito.version>
   </properties>
