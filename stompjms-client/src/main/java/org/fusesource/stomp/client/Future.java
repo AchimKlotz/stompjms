@@ -16,7 +16,9 @@ import java.util.concurrent.TimeUnit;
  * </p>
  *
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
+ * @deprecated use {@link java.util.concurrent.Future}
  */
+@Deprecated
 public interface Future<T> {
     T await() throws Exception;
     T await(long amount, TimeUnit unit) throws Exception;
