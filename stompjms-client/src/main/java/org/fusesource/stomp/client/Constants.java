@@ -58,6 +58,8 @@ public interface Constants {
     final AsciiBuffer RECEIPT = ascii("RECEIPT");
 
     // Headers
+    final AsciiBuffer VERSION = ascii("version");
+    final AsciiBuffer HEARTBEAT = ascii("heart-beat");
     final AsciiBuffer RECEIPT_REQUESTED = ascii("receipt");
     final AsciiBuffer TRANSACTION = ascii("transaction");
     final AsciiBuffer CONTENT_LENGTH = ascii("content-length");
