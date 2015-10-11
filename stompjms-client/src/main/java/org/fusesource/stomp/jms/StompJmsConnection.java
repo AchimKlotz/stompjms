@@ -37,6 +37,15 @@ import javax.net.ssl.SSLContext;
  */
 public class StompJmsConnection implements Connection, TopicConnection, QueueConnection {
 
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("StompJmsConnection [clientId=").append(clientId).append(", clientNumber=").append(clientNumber)
+                .append(", brokerURI=").append(brokerURI).append(", userName=").append(userName).append(", connected=")
+                .append(connected).append(", started=").append(started).append(", closed=").append(closed).append("]");
+        return builder.toString();
+    }
+
     private String clientId;
     private int clientNumber = 0;
     private boolean clientIdSet;
@@ -70,7 +79,8 @@ public class StompJmsConnection implements Connection, TopicConnection, QueueCon
      * @param password
      * @throws JMSException
      */
-    protected StompJmsConnection(URI brokerURI, URI localURI, String userName, String password, SSLContext sslContext) throws JMSException {
+    protected StompJmsConnection(URI brokerURI, URI localURI, String userName, String password, SSLContext sslContext)
+            throws JMSException {
         this.brokerURI = brokerURI;
         this.localURI = localURI;
         this.userName = userName;
@@ -107,12 +117,12 @@ public class StompJmsConnection implements Connection, TopicConnection, QueueCon
      * @param maxMessages
      * @return ConnectionConsumer
      * @throws JMSException
-     * @see javax.jms.Connection#createConnectionConsumer(javax.jms.Destination,
-     *      java.lang.String, javax.jms.ServerSessionPool, int)
+     * @see javax.jms.Connection#createConnectionConsumer(javax.jms.Destination, java.lang.String,
+     *      javax.jms.ServerSessionPool, int)
      */
     @Override
     public ConnectionConsumer createConnectionConsumer(Destination destination, String messageSelector,
-                                                       ServerSessionPool sessionPool, int maxMessages) throws JMSException {
+            ServerSessionPool sessionPool, int maxMessages) throws JMSException {
         checkClosed();
         connect();
         throw new JMSException("Not supported");
@@ -126,13 +136,12 @@ public class StompJmsConnection implements Connection, TopicConnection, QueueCon
      * @param maxMessages
      * @return ConnectionConsumer
      * @throws JMSException
-     * @see javax.jms.Connection#createDurableConnectionConsumer(javax.jms.Topic,
-     *      java.lang.String, java.lang.String, javax.jms.ServerSessionPool,
-     *      int)
+     * @see javax.jms.Connection#createDurableConnectionConsumer(javax.jms.Topic, java.lang.String, java.lang.String,
+     *      javax.jms.ServerSessionPool, int)
      */
     @Override
     public ConnectionConsumer createDurableConnectionConsumer(Topic topic, String subscriptionName,
-                                                              String messageSelector, ServerSessionPool sessionPool, int maxMessages) throws JMSException {
+            String messageSelector, ServerSessionPool sessionPool, int maxMessages) throws JMSException {
         checkClosed();
         connect();
         throw new JMSException("Not supported");
@@ -198,7 +207,7 @@ public class StompJmsConnection implements Connection, TopicConnection, QueueCon
         if (clientID == null) {
             throw new IllegalStateException("Cannot have a null clientID");
         }
-        if( connected.get() ) {
+        if (connected.get()) {
             throw new IllegalStateException("Cannot set the client id once connected.");
         }
         this.clientId = clientID;
@@ -259,12 +268,12 @@ public class StompJmsConnection implements Connection, TopicConnection, QueueCon
      * @param maxMessages
      * @return ConnectionConsumer
      * @throws JMSException
-     * @see javax.jms.TopicConnection#createConnectionConsumer(javax.jms.Topic,
-     *      java.lang.String, javax.jms.ServerSessionPool, int)
+     * @see javax.jms.TopicConnection#createConnectionConsumer(javax.jms.Topic, java.lang.String,
+     *      javax.jms.ServerSessionPool, int)
      */
     @Override
     public ConnectionConsumer createConnectionConsumer(Topic topic, String messageSelector,
-                                                       ServerSessionPool sessionPool, int maxMessages) throws JMSException {
+            ServerSessionPool sessionPool, int maxMessages) throws JMSException {
         checkClosed();
         connect();
         return null;
@@ -297,12 +306,12 @@ public class StompJmsConnection implements Connection, TopicConnection, QueueCon
      * @param maxMessages
      * @return ConnectionConsumer
      * @throws JMSException
-     * @see javax.jms.QueueConnection#createConnectionConsumer(javax.jms.Queue,
-     *      java.lang.String, javax.jms.ServerSessionPool, int)
+     * @see javax.jms.QueueConnection#createConnectionConsumer(javax.jms.Queue, java.lang.String,
+     *      javax.jms.ServerSessionPool, int)
      */
     @Override
     public ConnectionConsumer createConnectionConsumer(Queue queue, String messageSelector,
-                                                       ServerSessionPool sessionPool, int maxMessages) throws JMSException {
+            ServerSessionPool sessionPool, int maxMessages) throws JMSException {
         checkClosed();
         connect();
         return null;
@@ -374,7 +383,7 @@ public class StompJmsConnection implements Connection, TopicConnection, QueueCon
     protected StompChannel getChannel() throws JMSException {
         StompChannel rc;
         synchronized (this) {
-            if(channel == null) {
+            if (channel == null) {
                 channel = createChannel();
             }
             rc = channel;
@@ -387,10 +396,11 @@ public class StompJmsConnection implements Connection, TopicConnection, QueueCon
         checkClosed();
         StompChannel rc;
         synchronized (this) {
-            if(channel != null) {
+            if (channel != null) {
                 rc = channel;
                 channel = null;
-            } else {
+            }
+            else {
                 rc = createChannel();
             }
         }
@@ -402,13 +412,13 @@ public class StompJmsConnection implements Connection, TopicConnection, QueueCon
     protected void removeSession(StompJmsSession s, StompChannel channel) throws JMSException {
         synchronized (this) {
             this.sessions.remove(s);
-            if( channel!=null && this.channel==null ) {
+            if (channel != null && this.channel == null) {
                 // just in case some one is in a loop creating/closing sessions.
                 this.channel = channel;
                 channel = null;
             }
         }
-        if(channel!=null) {
+        if (channel != null) {
             channel.setListener(null);
             channel.close();
         }
@@ -436,6 +446,7 @@ public class StompJmsConnection implements Connection, TopicConnection, QueueCon
 
     /**
      * If set to true then all mesage sends are done async.
+     *
      * @param forceAsyncSend
      */
     public void setForceAsyncSend(boolean forceAsyncSend) {
