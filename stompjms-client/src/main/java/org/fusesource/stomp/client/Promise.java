@@ -25,7 +25,6 @@ public class Promise<T> implements Future<T>, Callback<T> {
     private static enum State {
         WAITING,
         DONE,
-        RECEIVED,
         CANCELLED
     }
 
@@ -37,7 +36,7 @@ public class Promise<T> implements Future<T>, Callback<T> {
 
     @Override
     public void onFailure(Throwable value) {
-        if (state == State.CANCELLED) {
+        if (isCancelled()) {
             return;
         }
         error = value;
@@ -47,7 +46,7 @@ public class Promise<T> implements Future<T>, Callback<T> {
 
     @Override
     public void onSuccess(T value) {
-        if (state == State.CANCELLED) {
+        if (isCancelled()) {
             return;
         }
         state = State.DONE;
@@ -57,34 +56,22 @@ public class Promise<T> implements Future<T>, Callback<T> {
 
     @Override
     public T get(long amount, TimeUnit unit) throws InterruptedException, TimeoutException, ExecutionException {
-        if (state == State.RECEIVED) {
-            return result;
-        }
         mayThrowFutureException();
-        latch.await(amount, unit);
-        if (isDone()) {
+        if (latch.await(amount, unit)) {
             return getInternal();
         }
-
         throw new TimeoutException();
     }
 
     @Override
     public T get() throws InterruptedException, ExecutionException {
-        if (state == State.CANCELLED) {
-            return result;
-        }
         mayThrowFutureException();
         latch.await();
         return getInternal();
     }
 
     private T getInternal() throws ExecutionException, Error {
-        if (state == State.CANCELLED) {
-            return result;
-        }
         mayThrowFutureException();
-        state = State.RECEIVED;
         return result;
     }
 
@@ -100,14 +87,12 @@ public class Promise<T> implements Future<T>, Callback<T> {
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
-        if (state == State.DONE || state == State.RECEIVED) {
+        if (state == State.DONE) {
             return false;
         }
         state = State.CANCELLED;
-        if (mayInterruptIfRunning) {
-            error = new InterruptedException("Future has been cancelled");
-            latch.countDown();
-        }
+        error = new InterruptedException("Future has been cancelled");
+        latch.countDown();
         return true;
     }
 
@@ -118,6 +103,6 @@ public class Promise<T> implements Future<T>, Callback<T> {
 
     @Override
     public boolean isDone() {
-        return state == State.DONE || state == State.RECEIVED || state == State.CANCELLED;
+        return state == State.DONE || state == State.CANCELLED;
     }
 }
