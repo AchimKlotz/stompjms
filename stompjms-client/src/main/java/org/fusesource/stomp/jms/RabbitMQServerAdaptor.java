@@ -17,7 +17,9 @@ import org.fusesource.stomp.codec.StompFrame;
  */
 public class RabbitMQServerAdaptor extends StompServerAdaptor {
 
-	@Override
+	private static final AsciiBuffer PREFETCH_COUNT = AsciiBuffer.ascii("prefetch-count");
+
+    @Override
 	public boolean matchesServerAndVersion(String server) {
 		return server.startsWith("RabbitMQ/");
 	}
@@ -33,6 +35,9 @@ public class RabbitMQServerAdaptor extends StompServerAdaptor {
 		}
 		if (persistent) {
 			headerMap.put(PERSISTENT, TRUE);
+		}
+		if(prefetch!= null){
+		    headerMap.put(PREFETCH_COUNT, AsciiBuffer.ascii(Integer.toString(prefetch.getMaxMessages())));
 		}
 	}
 
