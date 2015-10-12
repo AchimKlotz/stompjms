@@ -9,25 +9,42 @@
  */
 package org.fusesource.stomp.client;
 
-import org.fusesource.hawtdispatch.DispatchQueue;
-import org.fusesource.hawtdispatch.Task;
-import org.fusesource.hawtdispatch.transport.*;
-import org.fusesource.stomp.codec.StompFrame;
-import org.fusesource.stomp.codec.StompProtocolCodec;
+import static org.fusesource.hawtdispatch.Dispatch.NOOP;
+import static org.fusesource.hawtdispatch.Dispatch.createQueue;
+import static org.fusesource.stomp.client.Constants.ACCEPT_VERSION;
+import static org.fusesource.stomp.client.Constants.CLIENT_ID;
+import static org.fusesource.stomp.client.Constants.CONNECT;
+import static org.fusesource.stomp.client.Constants.CONNECTED;
+import static org.fusesource.stomp.client.Constants.ERROR;
+import static org.fusesource.stomp.client.Constants.HOST;
+import static org.fusesource.stomp.client.Constants.LOGIN;
+import static org.fusesource.stomp.client.Constants.PASSCODE;
 
-import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Future;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
-import static org.fusesource.hawtdispatch.Dispatch.NOOP;
-import static org.fusesource.hawtdispatch.Dispatch.createQueue;
-import static org.fusesource.stomp.client.Constants.*;
+import javax.net.ssl.SSLContext;
 
+import org.fusesource.hawtdispatch.DispatchQueue;
+import org.fusesource.hawtdispatch.Task;
+import org.fusesource.hawtdispatch.transport.DefaultTransportListener;
+import org.fusesource.hawtdispatch.transport.SslTransport;
+import org.fusesource.hawtdispatch.transport.TcpTransport;
+import org.fusesource.hawtdispatch.transport.Transport;
+import org.fusesource.hawtdispatch.transport.TransportListener;
+import org.fusesource.stomp.codec.StompFrame;
+import org.fusesource.stomp.codec.StompProtocolCodec;
 
 /**
  * <p>
@@ -48,6 +65,7 @@ public class Stomp {
     public synchronized static ThreadPoolExecutor getBlockingThreadPool() {
         if( blockingThreadPool == null ) {
             blockingThreadPool = new ThreadPoolExecutor(0, Integer.MAX_VALUE, KEEP_ALIVE, TimeUnit.MILLISECONDS, new SynchronousQueue<Runnable>(), new ThreadFactory() {
+                    @Override
                     public Thread newThread(Runnable r) {
                         Thread rc = new Thread(null, r, "Stomp JMS Task", STACK_SIZE);
                         rc.setDaemon(true);
@@ -142,6 +160,7 @@ public class Stomp {
             }
 
             TransportListener commandListener = new DefaultTransportListener() {
+                @Override
                 public void onTransportConnected() {
                     transport.resumeRead();
 
@@ -172,6 +191,7 @@ public class Stomp {
 
                 }
 
+                @Override
                 public void onTransportCommand(Object command) {
                     StompFrame response = (StompFrame) command;
                     if (response.action().equals(ERROR)) {
@@ -184,8 +204,10 @@ public class Stomp {
                     }
                 }
 
+                @Override
                 public void onTransportFailure(final IOException error) {
                     transport.stop(new Task() {
+                        @Override
                         public void run() {
                             cb.onFailure(error);
                         }
@@ -204,10 +226,12 @@ public class Stomp {
     public Future<FutureConnection> connectFuture() {
         final Promise<FutureConnection> future = new Promise<FutureConnection>();
         connectCallback(new Callback<CallbackConnection>() {
+            @Override
             public void onFailure(Throwable value) {
                 future.onFailure(value);
             }
 
+            @Override
             public void onSuccess(CallbackConnection value) {
                 future.onSuccess(new FutureConnection(value));
             }
@@ -217,10 +241,8 @@ public class Stomp {
 
     public BlockingConnection connectBlocking() throws IOException {
         try {
-            return new BlockingConnection(connectFuture().await());
-        } catch (IOException e) {
-            throw e;
-        } catch (Exception e) {
+            return new BlockingConnection(connectFuture().get());
+        } catch (ExecutionException | InterruptedException e) {
             throw new IOException(e.getMessage(), e);
         }
     }
@@ -386,7 +408,7 @@ public class Stomp {
     }
 
 
-    
+
 //    static public CallbackConnectionBuilder callback(URI uri) {
 //        return new CallbackConnectionBuilder(uri);
 //    }

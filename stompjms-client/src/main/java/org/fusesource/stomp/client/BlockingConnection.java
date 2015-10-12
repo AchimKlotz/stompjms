@@ -9,10 +9,11 @@
  */
 package org.fusesource.stomp.client;
 
+import java.io.IOException;
+import java.util.concurrent.ExecutionException;
+
 import org.fusesource.hawtbuf.AsciiBuffer;
 import org.fusesource.stomp.codec.StompFrame;
-
-import java.io.IOException;
 
 /**
  * <p>
@@ -30,11 +31,9 @@ public class BlockingConnection {
 
     public void close() throws IOException {
         try {
-            connection.close().await();
-        } catch (IOException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new IOException(e.getMessage(), e);
+            connection.close().get();
+        } catch (ExecutionException | InterruptedException e) {
+            throw new IOException(e);
         }
     }
 
@@ -48,31 +47,25 @@ public class BlockingConnection {
 
     public StompFrame request(StompFrame frame) throws IOException {
         try {
-            return connection.request(frame).await();
-        } catch (IOException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new IOException(e.getMessage(), e);
+            return connection.request(frame).get();
+        } catch (ExecutionException | InterruptedException e) {
+            throw new IOException(e);
         }
     }
 
     public void send(StompFrame frame) throws IOException {
         try {
-            connection.send(frame).await();
-        } catch (IOException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new IOException(e.getMessage(), e);
+            connection.send(frame).get();
+        } catch (ExecutionException | InterruptedException e) {
+            throw new IOException(e);
         }
     }
 
     public StompFrame receive() throws IOException {
         try {
-            return connection.receive().await();
-        } catch (IOException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new IOException(e.getMessage(), e);
+            return connection.receive().get();
+        } catch (ExecutionException | InterruptedException e) {
+            throw new IOException(e);
         }
     }
 

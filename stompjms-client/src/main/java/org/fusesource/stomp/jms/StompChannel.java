@@ -36,6 +36,7 @@ import java.net.URI;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -61,12 +62,9 @@ public class StompChannel {
 
     private final static Logger LOG = LoggerFactory.getLogger(StompChannel.class);
 
-    private static final StompServerAdaptor STOMP_SERVER_ADAPTORS[] = new StompServerAdaptor[]{
-        new ApolloServerAdaptor(),
-        new ActiveMQServerAdaptor(),
-        new RabbitMQServerAdaptor(),
-        new StompServerAdaptor()
-    };
+    private static final StompServerAdaptor STOMP_SERVER_ADAPTORS[] = new StompServerAdaptor[] {
+            new ApolloServerAdaptor(), new ActiveMQServerAdaptor(), new RabbitMQServerAdaptor(),
+            new StompServerAdaptor() };
 
     static final long TIMEOUT = -1;
     String channelId;
@@ -88,8 +86,6 @@ public class StompChannel {
     StompServerAdaptor serverAdaptor;
     String clientId;
     private long disconnectTimeout = 10000;
-
-
 
     public AsciiBuffer sessionId() {
         return sessionId;
@@ -124,11 +120,11 @@ public class StompChannel {
                 stomp.setClientId(clientId);
                 stomp.setSslContext(sslContext);
                 stomp.connectCallback(future);
-                if( omitHost ) {
+                if (omitHost) {
                     stomp.setHost(null);
                 }
 
-                connection = future.await();
+                connection = future.get();
                 writeBufferRemaining.set(connection.transport().getProtocolCodec().getWriteBufferSize());
                 connection.getDispatchQueue().execute(new Task() {
                     @Override
@@ -138,6 +134,7 @@ public class StompChannel {
                             public void onFailure(Throwable value) {
                                 handleException(value);
                             }
+
                             @Override
                             public void onSuccess(StompFrame value) {
                                 onFrame(value);
@@ -148,19 +145,19 @@ public class StompChannel {
                 });
 
                 sessionId = connection.connectedFrame().headerMap().get(SESSION);
-                if ( sessionId ==null ) {
-                    sessionId = new AsciiBuffer("id-"+UUID.randomUUID().toString());
+                if (sessionId == null) {
+                    sessionId = new AsciiBuffer("id-" + UUID.randomUUID().toString());
                 }
                 started.set(true);
 
                 String sv = getServerAndVersion();
-                for( StompServerAdaptor adaptor : STOMP_SERVER_ADAPTORS) {
-                    if( adaptor.matchesServerAndVersion(sv) ) {
+                for (StompServerAdaptor adaptor : STOMP_SERVER_ADAPTORS) {
+                    if (adaptor.matchesServerAndVersion(sv)) {
                         serverAdaptor = adaptor;
                         break;
                     }
                 }
-                assert serverAdaptor!=null;
+                assert serverAdaptor != null;
 
             } catch (Exception e) {
                 connected.set(false);
@@ -186,15 +183,16 @@ public class StompChannel {
             started.set(false);
 
             // Request a DISCONNECT so that we can try to flush the socket out.
-            connection.getDispatchQueue().execute(new Task(){
+            connection.getDispatchQueue().execute(new Task() {
                 @Override
                 public void run() {
                     StompFrame frame = new StompFrame(DISCONNECT);
-                    connection.request(frame, new Callback<StompFrame>(){
+                    connection.request(frame, new Callback<StompFrame>() {
                         @Override
                         public void onFailure(Throwable value) {
                             onSuccess(null);
                         }
+
                         @Override
                         public void onSuccess(StompFrame value) {
                             cd.countDown();
@@ -215,8 +213,9 @@ public class StompChannel {
     }
 
     public void sendMessage(StompJmsMessage copy, AsciiBuffer txid, boolean sync) throws JMSException {
-        if( sync && serverAckSubs.get() >0 ) {
-            throw new JMSException("Sync message sends not allowed when a subscription is using 'ack:auto'.  Causes deadlocks.");
+        if (sync && serverAckSubs.get() > 0) {
+            throw new JMSException(
+                    "Sync message sends not allowed when a subscription is using 'ack:auto'.  Causes deadlocks.");
         }
         copy.onSend();
         StompFrame frame = copy.getFrame();
@@ -226,9 +225,10 @@ public class StompChannel {
             frame.headerMap().put(TRANSACTION, txid);
         }
         try {
-            if( sync ) {
+            if (sync) {
                 sendRequest(frame);
-            } else {
+            }
+            else {
                 sendFrame(frame);
             }
         } catch (IOException e) {
@@ -236,8 +236,9 @@ public class StompChannel {
         }
     }
 
-    public void ackMessage(AsciiBuffer consumerId, AsciiBuffer messageId, AsciiBuffer txid, Promise<StompFrame> callback) throws JMSException {
-        if( callback!=null && serverAckSubs.get() >0 ) {
+    public void ackMessage(AsciiBuffer consumerId, AsciiBuffer messageId, AsciiBuffer txid,
+            Promise<StompFrame> callback) throws JMSException {
+        if (callback != null && serverAckSubs.get() > 0) {
             throw new JMSException("Sync acks not allowed when a subscription is using 'ack:auto'.  Causes deadlocks.");
         }
         StompFrame frame = new StompFrame();
@@ -248,9 +249,10 @@ public class StompChannel {
             frame.headerMap().put(TRANSACTION, txid);
         }
         try {
-            if(callback!=null) {
+            if (callback != null) {
                 sendRequest(frame, callback);
-            } else {
+            }
+            else {
                 sendFrame(frame);
             }
         } catch (IOException e) {
@@ -258,7 +260,9 @@ public class StompChannel {
         }
     }
 
-    public void subscribe(StompJmsDestination destination, AsciiBuffer consumerId, AsciiBuffer selector, AsciiBuffer ackMode, boolean noLocal, boolean persistent, boolean browser, StompJmsPrefetch prefetch, Map<AsciiBuffer, AsciiBuffer> headers) throws JMSException {
+    public void subscribe(StompJmsDestination destination, AsciiBuffer consumerId, AsciiBuffer selector,
+            AsciiBuffer ackMode, boolean noLocal, boolean persistent, boolean browser, StompJmsPrefetch prefetch,
+            Map<AsciiBuffer, AsciiBuffer> headers) throws JMSException {
         StompFrame frame = new StompFrame();
         frame.action(SUBSCRIBE);
         final Map<AsciiBuffer, AsciiBuffer> headerMap = frame.headerMap();
@@ -268,17 +272,18 @@ public class StompChannel {
             headerMap.put(SELECTOR, selector);
         }
         headerMap.put(ACK_MODE, ackMode);
-        if ( prefetch!=null ) {
+        if (prefetch != null) {
             serverAdaptor.addSubscribeHeaders(headerMap, persistent, browser, noLocal, prefetch);
         }
-        if(headers!=null) {
+        if (headers != null) {
             headerMap.putAll(headers);
         }
         try {
-            if( !destination.isTopic() && serverAckSubs.get() > 0 ) {
+            if (!destination.isTopic() && serverAckSubs.get() > 0) {
                 // have to do async to avoid deadlocks.
                 sendFrame(frame);
-            } else {
+            }
+            else {
                 // do it sync so that if a producer send to a topic we just
                 // subscribed on, we can ensure the subscription will receive
                 // the message.
@@ -298,7 +303,6 @@ public class StompChannel {
         }
     }
 
-
     public AsciiBuffer startTransaction() throws JMSException {
         AsciiBuffer txid = connection.nextId("TX-");
         StompFrame frame = new StompFrame();
@@ -315,8 +319,9 @@ public class StompChannel {
     }
 
     public void commitTransaction(AsciiBuffer txid) throws JMSException {
-        if( serverAckSubs.get() >0 ) {
-            throw new JMSException("transactions not allowed when a subscription is using 'ack:auto'.  Causes deadlocks.");
+        if (serverAckSubs.get() > 0) {
+            throw new JMSException(
+                    "transactions not allowed when a subscription is using 'ack:auto'.  Causes deadlocks.");
         }
         StompFrame frame = new StompFrame();
         frame.action(COMMIT);
@@ -331,8 +336,9 @@ public class StompChannel {
     }
 
     public void rollbackTransaction(AsciiBuffer txid) throws JMSException {
-        if( serverAckSubs.get() >0 ) {
-            throw new JMSException("transactions not allowed when a subscription is using 'ack:auto'.  Causes deadlocks.");
+        if (serverAckSubs.get() > 0) {
+            throw new JMSException(
+                    "transactions not allowed when a subscription is using 'ack:auto'.  Causes deadlocks.");
         }
         StompFrame frame = new StompFrame();
         frame.action(ABORT);
@@ -346,20 +352,20 @@ public class StompChannel {
         }
     }
 
-
     public void sendFrame(final StompFrame frame) throws IOException {
         try {
             final int size = frame.size();
-            if( writeBufferRemaining.getAndAdd(-size) > 0 ) {
+            if (writeBufferRemaining.getAndAdd(-size) > 0) {
                 // just send it without blocking...
                 connection.getDispatchQueue().execute(new Task() {
                     @Override
                     public void run() {
-                        connection.send(frame, new Callback<Void>(){
+                        connection.send(frame, new Callback<Void>() {
                             @Override
                             public void onFailure(Throwable value) {
                                 handleException(value);
                             }
+
                             @Override
                             public void onSuccess(Void value) {
                                 writeBufferRemaining.getAndAdd(size);
@@ -367,7 +373,8 @@ public class StompChannel {
                         });
                     }
                 });
-            } else {
+            }
+            else {
                 // ran out of buffer space.. wait for the write to complete
                 // so that we don't blow out our memory buffers.
                 final Promise<Void> future = new Promise<Void>() {
@@ -383,12 +390,10 @@ public class StompChannel {
                         connection.send(frame, future);
                     }
                 });
-                future.await();
+                future.get();
             }
-        } catch (IOException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new IOException(e.getMessage(), e);
+        } catch (ExecutionException | InterruptedException e) {
+            throw new IOException(e);
         }
     }
 
@@ -407,11 +412,9 @@ public class StompChannel {
             sendRequest(frame, future);
             // Wait on the future so that we don't cause flow control
             // problems.
-            future.await();
-        } catch (IOException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new IOException(e.getMessage(), e);
+            future.get();
+        } catch (ExecutionException | InterruptedException e) {
+            throw new IOException(e);
         }
     }
 
@@ -426,7 +429,8 @@ public class StompChannel {
             if (l != null) {
                 l.onMessage(msg);
             }
-        } else {
+        }
+        else {
             handleException(new ProtocolException("Unknown STOMP action: " + action));
         }
     }
@@ -439,7 +443,8 @@ public class StompChannel {
     }
 
     /**
-     * @param channelId the channelId to set
+     * @param channelId
+     *            the channelId to set
      */
     public void setChannelId(String channelId) {
         this.channelId = channelId;
@@ -453,7 +458,8 @@ public class StompChannel {
     }
 
     /**
-     * @param userName the userName to set
+     * @param userName
+     *            the userName to set
      */
     public void setUserName(String userName) {
         this.userName = userName;
@@ -467,7 +473,8 @@ public class StompChannel {
     }
 
     /**
-     * @param password the password to set
+     * @param password
+     *            the password to set
      */
     public void setPassword(String password) {
         this.password = password;
@@ -481,7 +488,8 @@ public class StompChannel {
     }
 
     /**
-     * @param ackMode the ackMode to set
+     * @param ackMode
+     *            the ackMode to set
      */
     public void setAckMode(String ackMode) {
         this.ackMode = ackMode;
@@ -495,7 +503,8 @@ public class StompChannel {
     }
 
     /**
-     * @param brokerURI the brokerURI to set
+     * @param brokerURI
+     *            the brokerURI to set
      */
     public void setBrokerURI(URI brokerURI) {
         this.brokerURI = brokerURI;
@@ -509,7 +518,8 @@ public class StompChannel {
     }
 
     /**
-     * @param localURI the localURI to set
+     * @param localURI
+     *            the localURI to set
      */
     public void setLocalURI(URI localURI) {
         this.localURI = localURI;
@@ -522,6 +532,7 @@ public class StompChannel {
     public void setOmitHost(boolean omitHost) {
         this.omitHost = omitHost;
     }
+
     /**
      * @return the listener
      */
@@ -530,7 +541,8 @@ public class StompChannel {
     }
 
     /**
-     * @param listener the listener to set
+     * @param listener
+     *            the listener to set
      */
     public void setListener(StompJmsMessageListener listener) {
         this.listener = listener;
@@ -544,13 +556,15 @@ public class StompChannel {
         ExceptionListener l = this.exceptionListener;
         if (l != null) {
             l.onException(StompJmsExceptionSupport.create(e));
-        } else {
-            if( started.get() ) {
+        }
+        else {
+            if (started.get()) {
                 LOG.error(e.getLocalizedMessage(), e);
                 try {
                     this.close();
                 } catch (JMSException e1) {
-                    LOG.error(e1.getLocalizedMessage(), e1);                }
+                    LOG.error(e1.getLocalizedMessage(), e1);
+                }
             }
         }
     }
@@ -574,9 +588,9 @@ public class StompChannel {
     private String getConnectedHeader(AsciiBuffer header) {
         final StompFrame frame = connection.connectedFrame();
         String rc = null;
-        if( frame != null ) {
+        if (frame != null) {
             final AsciiBuffer host = frame.getHeader(header);
-            if( host !=null ) {
+            if (host != null) {
                 rc = host.toString();
             }
         }

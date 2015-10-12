@@ -9,11 +9,18 @@
  */
 package org.fusesource.stomp.client;
 
-import junit.framework.TestCase;
+import static org.fusesource.stomp.client.Constants.DESTINATION;
+import static org.fusesource.stomp.client.Constants.ID;
+import static org.fusesource.stomp.client.Constants.MESSAGE;
+import static org.fusesource.stomp.client.Constants.MESSAGE_ID;
+import static org.fusesource.stomp.client.Constants.SEND;
+import static org.fusesource.stomp.client.Constants.SUBSCRIBE;
+
+import java.util.concurrent.Future;
+
 import org.fusesource.stomp.codec.StompFrame;
 
-import static org.fusesource.stomp.client.Constants.*;
-
+import junit.framework.TestCase;
 /**
  * <p>
  * </p>
@@ -39,7 +46,7 @@ public class FutureApiTest extends TestCase {
 
         Stomp stomp = new Stomp("localhost", broker.port);
         Future<FutureConnection> future = stomp.connectFuture();
-        FutureConnection connection = future.await();
+        FutureConnection connection = future.get();
 
         // Lets setup a receive.. this does not block until you await it..
         Future<StompFrame> receiveFuture = connection.receive();
@@ -50,7 +57,7 @@ public class FutureApiTest extends TestCase {
         Future<StompFrame> response = connection.request(frame);
 
         // This unblocks once the response frame is received.
-        assertNotNull(response.await());
+        assertNotNull(response.get());
 
         frame = new StompFrame(SEND);
         frame.addHeader(DESTINATION, StompFrame.encodeHeader("/queue/test"));
@@ -59,10 +66,10 @@ public class FutureApiTest extends TestCase {
 
         // This unblocks once the frame is accepted by the socket.  Use it
         // to avoid flow control issues.
-        sendFuture.await();
+        sendFuture.get();
 
         // Try to get the received message.
-        StompFrame received = receiveFuture.await();
+        StompFrame received = receiveFuture.get();
         assertTrue(received.action().equals(MESSAGE));
         assertTrue(received.getHeader(MESSAGE_ID).toString().equals("test"));
     }

@@ -9,13 +9,14 @@
  */
 package org.fusesource.stomp.client;
 
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.concurrent.Future;
+
 import org.fusesource.hawtbuf.AsciiBuffer;
 import org.fusesource.hawtdispatch.DispatchQueue;
 import org.fusesource.hawtdispatch.Task;
 import org.fusesource.stomp.codec.StompFrame;
-
-import java.util.ArrayList;
-import java.util.LinkedList;
 
 /**
  * <p>
@@ -67,6 +68,7 @@ public class FutureConnection {
     public Future<Void> close() {
         final Promise<Void> future = new Promise<Void>();
         connection.close(new Runnable() {
+            @Override
             public void run() {
                 future.onSuccess(null);
             }
@@ -86,6 +88,7 @@ public class FutureConnection {
     public Future<StompFrame> request(final StompFrame frame) {
         final Promise<StompFrame> future = new Promise<StompFrame>();
         connection.getDispatchQueue().execute(new Task() {
+            @Override
             public void run() {
                 connection.request(frame, future);
             }
@@ -96,6 +99,7 @@ public class FutureConnection {
     public Future<Void> send(final StompFrame frame) {
         final Promise<Void> future = new Promise<Void>();
         connection.getDispatchQueue().execute(new Task() {
+            @Override
             public void run() {
                 connection.send(frame, future);
             }
@@ -106,6 +110,7 @@ public class FutureConnection {
     public Future<StompFrame> receive() {
         final Promise<StompFrame> future = new Promise<StompFrame>();
         getDispatchQueue().execute(new Task(){
+            @Override
             public void run() {
                 if( connection.getFailure()!=null ) {
                     future.onFailure(connection.getFailure());

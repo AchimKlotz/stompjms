@@ -15,12 +15,9 @@ package org.fusesource.stomp.client;
  *
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-public class Callback<T> {
+public interface Callback<T> {
 
-    public void onFailure(Throwable value) {
-    }
+    public void onFailure(Throwable value) ;
 
-    public void onSuccess(T value) {
-    }
-
+    public void onSuccess(T value) ;
 }

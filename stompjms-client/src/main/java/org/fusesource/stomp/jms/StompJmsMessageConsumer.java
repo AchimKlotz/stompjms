@@ -45,15 +45,17 @@ public class StompJmsMessageConsumer implements MessageConsumer, StompJmsMessage
     final Lock lock = new ReentrantLock();
     final AtomicBoolean suspendedConnection = new AtomicBoolean();
 
-    protected StompJmsMessageConsumer(final AsciiBuffer id, StompJmsSession s, StompJmsDestination destination, String selector) {
+    protected StompJmsMessageConsumer(final AsciiBuffer id, StompJmsSession s, StompJmsDestination destination,
+            String selector) {
         this.id = id;
         this.session = s;
         this.destination = destination;
         this.messageSelector = selector;
 
-        if(  session.acknowledgementMode==Session.SESSION_TRANSACTED ) {
+        if (session.acknowledgementMode == Session.SESSION_TRANSACTED) {
             this.messageQueue = new TxMessageQueue(session.consumerMessageBufferSize);
-        } else {
+        }
+        else {
             this.messageQueue = new MessageQueue(session.consumerMessageBufferSize);
         }
     }
@@ -61,7 +63,7 @@ public class StompJmsMessageConsumer implements MessageConsumer, StompJmsMessage
     public boolean tcpFlowControl() {
         // Then the STOMP client does not need to issue acks to the server, we suspend
         // TCP reads to avoid memory overruns.
-        return session.acknowledgementMode==StompJmsSession.SERVER_AUTO_ACKNOWLEDGE;
+        return session.acknowledgementMode == StompJmsSession.SERVER_AUTO_ACKNOWLEDGE;
     }
 
     public void init() throws JMSException {
@@ -71,7 +73,6 @@ public class StompJmsMessageConsumer implements MessageConsumer, StompJmsMessage
     public boolean isDurableSubscription() {
         return false;
     }
-
 
     public boolean isBrowser() {
         return false;
@@ -83,14 +84,13 @@ public class StompJmsMessageConsumer implements MessageConsumer, StompJmsMessage
      */
     @Override
     public void close() throws JMSException {
-        if(closed.compareAndSet(false, true)) {
+        if (closed.compareAndSet(false, true)) {
             this.session.remove(this);
-            if( suspendedConnection.compareAndSet(true, false) ) {
+            if (suspendedConnection.compareAndSet(true, false)) {
                 session.channel.connection().resume();
             }
         }
     }
-
 
     @Override
     public MessageListener getMessageListener() throws JMSException {
@@ -165,7 +165,6 @@ public class StompJmsMessageConsumer implements MessageConsumer, StompJmsMessage
 
     }
 
-
     protected void checkClosed() throws IllegalStateException {
         if (this.closed.get()) {
             throw new IllegalStateException("The MessageProducer is closed");
@@ -173,19 +172,19 @@ public class StompJmsMessageConsumer implements MessageConsumer, StompJmsMessage
     }
 
     StompJmsMessage copy(final StompJmsMessage message) throws JMSException {
-        if( message == null ) {
+        if (message == null) {
             return null;
         }
         return message.copy();
     }
 
     StompJmsMessage ack(final StompJmsMessage message) {
-        if( message!=null ) {
-            if( message.getAcknowledgeCallback()!=null ) {
+        if (message != null) {
+            if (message.getAcknowledgeCallback() != null) {
                 // Message has been received by the app.. expand the credit window
                 // so that we receive more messages.
                 StompFrame frame = session.channel.serverAdaptor.createCreditFrame(this, message.getFrame());
-                if( frame != null ) {
+                if (frame != null) {
                     try {
                         session.channel.sendFrame(frame);
                     } catch (IOException ignore) {
@@ -200,51 +199,53 @@ public class StompJmsMessageConsumer implements MessageConsumer, StompJmsMessage
     }
 
     private void doAck(final StompJmsMessage message) {
-        if( tcpFlowControl()) {
+        if (tcpFlowControl()) {
             // We may need to resume the message flow.
-            if( !this.messageQueue.isFull() ) {
-                if( suspendedConnection.compareAndSet(true, false) ) {
+            if (!this.messageQueue.isFull()) {
+                if (suspendedConnection.compareAndSet(true, false)) {
                     session.channel.connection().resume();
                 }
             }
-        } else {
+        }
+        else {
             try {
                 StompChannel channel = session.channel;
-                if( channel == null ) {
+                if (channel == null) {
                     throw new JMSException("Consumer closed");
                 }
 
                 final Promise<StompFrame> ack = new Promise<StompFrame>();
-                switch( session.acknowledgementMode ) {
-                    case Session.CLIENT_ACKNOWLEDGE:
-                        channel.ackMessage(id,  message.getMessageID(), null, ack);
-                        break;
-                    case Session.AUTO_ACKNOWLEDGE:
-                        channel.ackMessage(id,  message.getMessageID(), null, ack);
-                        break;
-                    case Session.DUPS_OK_ACKNOWLEDGE:
-                        channel.ackMessage(id,  message.getMessageID(), null, null);
-                        ack.onSuccess(null);
-                        break;
-                    case Session.SESSION_TRANSACTED:
-                        channel.ackMessage(id,  message.getMessageID(), session.currentTransactionId, null);
-                        ack.onSuccess(null);
-                        break;
-                    case StompJmsSession.SERVER_AUTO_ACKNOWLEDGE:
-                        throw new IllegalStateException("This should never get called.");
+                switch (session.acknowledgementMode) {
+                case Session.CLIENT_ACKNOWLEDGE:
+                    channel.ackMessage(id, message.getMessageID(), null, ack);
+                    break;
+                case Session.AUTO_ACKNOWLEDGE:
+                    channel.ackMessage(id, message.getMessageID(), null, ack);
+                    break;
+                case Session.DUPS_OK_ACKNOWLEDGE:
+                    channel.ackMessage(id, message.getMessageID(), null, null);
+                    ack.onSuccess(null);
+                    break;
+                case Session.SESSION_TRANSACTED:
+                    channel.ackMessage(id, message.getMessageID(), session.currentTransactionId, null);
+                    ack.onSuccess(null);
+                    break;
+                case StompJmsSession.SERVER_AUTO_ACKNOWLEDGE:
+                    throw new IllegalStateException("This should never get called.");
                 }
-                ack.await();
-
-            } catch (JMSException e) {
-                session.connection.onException(e);
-                throw new RuntimeException(e);
+                ack.get();
             } catch (Exception e) {
-                session.connection.onException(new JMSException("Exception occurred sending ACK for message id : " + message.getMessageID()));
-                throw new RuntimeException("Exception occurred sending ACK for message id : " + message.getMessageID(), e);
+                if (e.getCause() instanceof JMSException) {
+                    session.connection.onException((JMSException) e.getCause());
+                    throw new RuntimeException(e);
+                }
+                session.connection.onException(
+                        new JMSException("Exception occurred sending ACK for message id : " + message.getMessageID()));
+                throw new RuntimeException("Exception occurred sending ACK for message id : " + message.getMessageID(),
+                        e);
             }
         }
     }
-
 
     /**
      * @param message
@@ -253,11 +254,11 @@ public class StompJmsMessageConsumer implements MessageConsumer, StompJmsMessage
     public void onMessage(final StompJmsMessage message) {
         lock.lock();
         try {
-            if( session.acknowledgementMode == Session.CLIENT_ACKNOWLEDGE ) {
-                message.setAcknowledgeCallback(new Callable<Void>(){
+            if (session.acknowledgementMode == Session.CLIENT_ACKNOWLEDGE) {
+                message.setAcknowledgeCallback(new Callable<Void>() {
                     @Override
                     public Void call() throws Exception {
-                        if( session.channel == null ) {
+                        if (session.channel == null) {
                             throw new javax.jms.IllegalStateException("Session closed.");
                         }
                         doAck(message);
@@ -265,11 +266,11 @@ public class StompJmsMessageConsumer implements MessageConsumer, StompJmsMessage
                     }
                 });
             }
-//            System.out.println(""+session.channel.getSocket().getLocalAddress() +" recv "+ message.getMessageID());
+            // System.out.println(""+session.channel.getSocket().getLocalAddress() +" recv "+ message.getMessageID());
             this.messageQueue.enqueue(message);
             // We may need to suspend the message flow.
-            if( tcpFlowControl() && this.messageQueue.isFull() ) {
-                if(suspendedConnection.compareAndSet(false, true) ) {
+            if (tcpFlowControl() && this.messageQueue.isFull()) {
+                if (suspendedConnection.compareAndSet(false, true)) {
                     session.channel.connection().suspend();
                 }
             }
@@ -281,7 +282,7 @@ public class StompJmsMessageConsumer implements MessageConsumer, StompJmsMessage
                 @Override
                 public void run() {
                     StompJmsMessage message;
-                    while( session.isStarted() && (message=messageQueue.dequeueNoWait()) !=null ) {
+                    while (session.isStarted() && (message = messageQueue.dequeueNoWait()) != null) {
                         try {
                             messageListener.onMessage(copy(ack(message)));
                         } catch (Exception e) {
@@ -329,11 +330,11 @@ public class StompJmsMessageConsumer implements MessageConsumer, StompJmsMessage
     }
 
     void rollback() {
-        ((TxMessageQueue)this.messageQueue).rollback();
+        ((TxMessageQueue) this.messageQueue).rollback();
     }
 
     void commit() {
-        ((TxMessageQueue)this.messageQueue).commit();
+        ((TxMessageQueue) this.messageQueue).commit();
     }
 
     void drainMessageQueueToListener() {
@@ -358,7 +359,8 @@ public class StompJmsMessageConsumer implements MessageConsumer, StompJmsMessage
     }
 
     /**
-     * @throws IllegalStateException in child implementation
+     * @throws IllegalStateException
+     *             in child implementation
      */
     public boolean getNoLocal() throws IllegalStateException {
         return false;

@@ -9,10 +9,16 @@
  */
 package org.fusesource.stomp.client;
 
-import junit.framework.TestCase;
+import static org.fusesource.stomp.client.Constants.DESTINATION;
+import static org.fusesource.stomp.client.Constants.ID;
+import static org.fusesource.stomp.client.Constants.MESSAGE;
+import static org.fusesource.stomp.client.Constants.MESSAGE_ID;
+import static org.fusesource.stomp.client.Constants.SEND;
+import static org.fusesource.stomp.client.Constants.SUBSCRIBE;
+
 import org.fusesource.stomp.codec.StompFrame;
 
-import static org.fusesource.stomp.client.Constants.*;
+import junit.framework.TestCase;
 
 /**
  * <p>
@@ -83,7 +89,7 @@ public class CallbackApiTest extends TestCase {
 
             }
         });
-        StompFrame received = result.await();
+        StompFrame received = result.get();
         assertTrue(received.action().equals(MESSAGE));
         assertTrue(received.getHeader(MESSAGE_ID).toString().equals("test"));
     }
