@@ -12,7 +12,7 @@ package org.fusesource.stomp.jms;
 
 import static org.fusesource.hawtbuf.Buffer.ascii;
 import static org.fusesource.stomp.client.Constants.AUTO;
-import static org.fusesource.stomp.client.Constants.CLIENT;
+import static org.fusesource.stomp.client.Constants.INDIVIDUAL;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -674,7 +674,7 @@ public class StompJmsSession implements Session, QueueSession, TopicSession, Sto
             mode = AUTO;
         }
         else {
-            mode = CLIENT;
+            mode = INDIVIDUAL;
         }
 
         getChannel().subscribe(consumer.getDestination(), consumer.getId(),
