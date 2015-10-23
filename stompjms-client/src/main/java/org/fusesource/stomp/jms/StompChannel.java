@@ -11,7 +11,7 @@
 package org.fusesource.stomp.jms;
 
 import static org.fusesource.hawtdispatch.Dispatch.NOOP;
-import static org.fusesource.stomp.client.Constants.ABORT;
+import static org.fusesource.stomp.client.Constants.ABORT_TRANSACTION;
 import static org.fusesource.stomp.client.Constants.ACK;
 import static org.fusesource.stomp.client.Constants.ACK_MODE;
 import static org.fusesource.stomp.client.Constants.BEGIN;
@@ -341,7 +341,7 @@ public class StompChannel {
                     "transactions not allowed when a subscription is using 'ack:auto'.  Causes deadlocks.");
         }
         StompFrame frame = new StompFrame();
-        frame.action(ABORT);
+        frame.action(ABORT_TRANSACTION);
         if (txid != null) {
             frame.headerMap().put(TRANSACTION, txid);
         }
@@ -560,11 +560,7 @@ public class StompChannel {
         else {
             if (started.get()) {
                 LOG.error(e.getLocalizedMessage(), e);
-                try {
-                    this.close();
-                } catch (JMSException e1) {
-                    LOG.error(e1.getLocalizedMessage(), e1);
-                }
+                connection.close(NOOP);
             }
         }
     }

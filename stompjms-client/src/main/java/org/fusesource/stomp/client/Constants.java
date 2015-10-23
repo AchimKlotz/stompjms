@@ -10,9 +10,9 @@
 
 package org.fusesource.stomp.client;
 
-import org.fusesource.hawtbuf.AsciiBuffer;
-
 import static org.fusesource.hawtbuf.Buffer.ascii;
+
+import org.fusesource.hawtbuf.AsciiBuffer;
 
 /**
  * <p>
@@ -49,7 +49,6 @@ public interface Constants {
     final AsciiBuffer ABORT_TRANSACTION = ascii("ABORT");
     final AsciiBuffer BEGIN = ascii("BEGIN");
     final AsciiBuffer COMMIT = ascii("COMMIT");
-    final AsciiBuffer ABORT = ascii("ABORT");
     final AsciiBuffer ACK = ascii("ACK");
 
     // Responses
