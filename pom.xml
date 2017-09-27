@@ -22,7 +22,7 @@
   
   <groupId>org.fusesource.stompjms</groupId>
   <artifactId>stompjms-project</artifactId>
-  <version>1.21-SNAPSHOT</version>
+  <version>1.21-PRONTOWEB</version>
   <packaging>pom</packaging>
   
   <name>${project.artifactId}</name>
@@ -84,12 +84,17 @@
     <url>http://github.com/fusesource/stompjms/tree/master</url>
   </scm>
 
-  <distributionManagement>
-    <site>
-      <id>website.fusesource.org</id>
-      <name>website</name>
-      <url>dav:http://fusesource.com/forge/dav/${forge-project-id}/maven/${project.version}</url>
-    </site>
+ <distributionManagement>
+    <snapshotRepository>
+      <id>cpronto.snapshot.repository</id>
+      <name>ProntoWeb GmbH Snapshot Repository</name>
+      <url>https://nexus.prontoweb.org/nexus/content/repositories/snapshots</url>
+    </snapshotRepository>
+    <repository>
+      <id>cpronto.release.repository</id>
+      <name>ProntoWeb GmbH Snapshot Repository</name>
+      <url>https://nexus.prontoweb.org/nexus/content/repositories/releases</url>
+    </repository>
   </distributionManagement>
 
   <developers>
@@ -259,8 +264,8 @@
 
   <modules>
     <module>stompjms-client</module>
-    <module>stompjms-website</module>
-    <module>stompjms-activemq-test</module>
+<!--     <module>stompjms-website</module> -->
+<!--     <module>stompjms-activemq-test</module> -->
   </modules>
     
 </project>
